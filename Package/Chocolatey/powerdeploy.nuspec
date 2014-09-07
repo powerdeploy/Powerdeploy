@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>powerdeploy</id>
+    <title>Powerdeploy</title>
+    <version>$version$</version>
+    <authors>Jason Mueller</authors>
+    <owners>Jason Mueller</owners>
+    <summary>Powerdeploy - Deceivingly Simple Deployments</summary>
+    <description>Powerdeploy is a lightweight application deployment tool built on PowerShell that is simple enough to get up and running right away but powerful enough to deploy just about any application.</description>
+    <projectUrl>https://github.com/powerdeploy/Powerdeploy</projectUrl>
+    <tags>powerdeploy admin</tags>
+    <copyright>Copyright 2014 Jason Mueller</copyright>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <!--<iconUrl>https://raw.github.com/__CHOCO_PKG_OWNER_REPO__/master/__NAME__/__NAME__.png</iconUrl>-->
+    <!--<dependencies>
+      <dependency id="" version="" />
+    </dependencies>-->
+    <releaseNotes></releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+    <!-- <file src="content\**" target="content" /> -->
+  </files>
+</package>

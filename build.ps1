@@ -3,19 +3,56 @@ properties {
   $packageFolder = Join-Path $PSScriptRoot '_package'
   $sourceFolder = Join-Path $PSScriptRoot 'Source'
   $acceptanceTestFolder = Join-Path $PSScriptRoot 'AcceptanceTests'
+  $chocolateyFolder = Join-Path $PSScriptRoot 'Package\Chocolatey'
   $version = git describe --tags --always --dirty
+  $strippedVersion = &{$version -match '^v?(?<version>.+)$' | Out-Null; $matches.version}
   $changeset = 'n/a'
 }
 
 task default -depends Build
 task Build -depends Clean, Test, Package
-task Package -depends Version, Squirt, Unversion, Zip, AcceptanceTest
+task Package -depends Version, Squirt, Unversion, AcceptanceTest, Zip, PackageChocolatey
 
 task Zip {
     Copy-Item $buildFolder $packageFolder\temp\Powerdeploy -Recurse
-    $version -match '^v?(?<version>.+)$'
-    $strippedVersion = $matches.version
+    
+    # Make the "obviously-named" package that can be dropped somewhere and
+    # will not conflict with other versions of the package.
     exec { ."$sourceFolder\Tools\7za.exe" a -r "$packageFolder\Powerdeploy-$strippedVersion.zip" "$packageFolder\temp\Powerdeploy" }
+
+    # Make the simply-named package that will be used for the GH release.
+    # TODO: We don't need this right now.  We can just change the name when we upload to GitHub.
+    # New-Item $packageFolder\$version -ItemType Directory
+    # Copy-Item "$packageFolder\Powerdeploy-$strippedVersion.zip" "$packageFolder\$version"
+    # Rename-Item "$packageFolder\$version\PowerDeploy-$strippedVersion.zip" "Powerdeploy.zip"
+}
+
+task PackageChocolatey -depends Zip {
+    Copy-Item $chocolateyFolder $packageFolder\temp\Chocolatey -Recurse
+    $nuspec = "$packageFolder\temp\Chocolatey\powerdeploy.nuspec"
+
+    # Update the spec with our version.
+    $xml = [xml](Get-Content $nuspec -Raw)
+    $xml.package.metadata.version = "$strippedVersion"
+    $xml.Save($nuspec)
+
+    # Update the installer to pull the binary from the right release in GitHub.
+    $contentFile = "$packageFolder\temp\Chocolatey\tools\chocolateyInstall.ps1"
+    cat $contentFile | write-host
+    (Get-Content "$contentFile") `
+      | % {$_ -replace "::version::", "$version" } `
+      | Set-Content "$contentFile"
+
+    # cpack doesn't support -OutputDirectory on nuget pack, so we need to be in the directory
+    # we want our package in.
+    exec { cd "$packageFolder"; cpack "$packageFolder\temp\Chocolatey\powerdeploy.nuspec" }
+}
+
+
+task Publish -depends Package {
+    # Add the release for the current tag to GH (defer?).
+
+    # Push chocolotey package (defer?).
 }
 
 task Squirt {
