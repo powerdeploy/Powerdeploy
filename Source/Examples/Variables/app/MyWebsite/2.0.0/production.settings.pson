@@ -1,0 +1,4 @@
+@{
+    'DebugLevel' = 'Error'
+    'OtherServiceUrl' = 'http://otherhost:8123/getvalues'
+}

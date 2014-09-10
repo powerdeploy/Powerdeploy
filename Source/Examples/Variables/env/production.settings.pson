@@ -1,0 +1,4 @@
+@{
+    'PaymentServiceUrl' = 'http://paymentsite.local'
+    'SqlDatabase' = 'Data Source=DBServer\prod;Initial Catalog=AppData;Integrated Security=True;'
+}
