@@ -32,4 +32,4 @@ Check out [the documentation][wiki] for more information on how Powerdeploy does
 `git submodule update --init`
 
 [PowerShell]: http://technet.microsoft.com/en-us/library/bb978526.aspx
-[wiki]: https://github.com/jasonmueller/Powerdeploy/wiki
+[wiki]: https://github.com/powerdeploy/Powerdeploy/wiki
