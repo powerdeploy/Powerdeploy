@@ -16,10 +16,105 @@ function Test-ConfigurationVariable($actual, $name, $value, $scope, $scopeName) 
 }
 
 function variable($name, $value, $scope, $scopeName) {
-    New-ConfigurationVariable $name $value ($scope -split '/') ($scopeName -split '/')
+    New-ConfigurationVariable $name $value -Scope ($scope -split '/') -ScopeName ($scopeName -split '/')
 }
 
-Describe 'Get-ConfigurationVariable' {
+Describe 'Get-ConfigurationVariable: resolving configuration as hashtable, given variables exist' {
+
+    Mock GetFilesystemConfiguration -ParameterFilter { $SettingsPath -eq "W:\settings"} {
+        variable envkey1 envvalue1 Environment Integration
+        
+        variable appkey1 appdefaultvalue1 Application,Version MyWebsite,12345 # Key with override for environment
+        variable appkey2 appdefaultvalue2 Application,Version MyWebsite,12345 # Key with no override for environment
+        variable appkey3 '${env:envkey1}' Application,Version MyWebsite,12345 # Key with no override using placeholder
+
+        variable appkey1 appvalue1 Application,Version,Environment MyWebsite,12345,Integration # Key with default
+        variable appkey4 appvalue4 Application,Version,Environment MyWebsite,12345,Integration # Key with no default
+        variable appkey5 '${env:envkey1}' Application,Version,Environment MyWebsite,12345,Integration # Key with no default using placeholder
+    }
+
+    $settings = Get-ConfigurationVariable `
+        -SettingsPath "w:\settings" `
+        -EnvironmentName Integration `
+        -ComputerName Unused `
+        -ApplicationName MyWebsite `
+        -Version 12345 `
+        -Resolve `
+        -AsHashTable
+
+    It 'returns non-placeholder application variables specified at the environment level' {
+        $settings.appkey4 | should be appvalue4
+    }     
+
+    It 'returns placeholder-injected in application variables specified at the environment level' {
+        $settings.appkey5 | should be envvalue1
+    }    
+
+    It 'returns environment-level application variable instead of default' {
+        $settings.appkey1 | should be appvalue1  
+    }
+
+    It 'returns non-placeholder default variable scoped to the environment when no environment override exists' {
+        $settings.appkey2 | should be appdefaultvalue2  
+    }    
+
+    It 'returns placeholder-injected default variable scoped to the environment when no environment override exists' {
+        $settings.appkey3 | should be envvalue1  
+    }    
+
+    It 'returns only the expected number of results' {
+        $settings.GetEnumerator() | Measure-Object | select -expand Count | should be 5
+    }
+}
+
+Describe 'Get-ConfigurationVariable: resolving configuration, given app configuration with defaults and environment placeholders' {
+    
+    Mock GetFilesystemConfiguration -ParameterFilter { $SettingsPath -eq "W:\settings"} {
+        variable envkey1 envvalue1 Environment Integration
+        
+        variable appkey1 appdefaultvalue1 Application,Version MyWebsite,12345 # Key with override for environment
+        variable appkey2 appdefaultvalue2 Application,Version MyWebsite,12345 # Key with no override for environment
+        variable appkey3 '${env:envkey1}' Application,Version MyWebsite,12345 # Key with no override using placeholder
+
+        variable appkey1 appvalue1 Application,Version,Environment MyWebsite,12345,Integration # Key with default
+        variable appkey4 appvalue4 Application,Version,Environment MyWebsite,12345,Integration # Key with no default
+        variable appkey5 '${env:envkey1}' Application,Version,Environment MyWebsite,12345,Integration # Key with no default using placeholder
+    }
+
+    $settings = Get-ConfigurationVariable `
+        -SettingsPath "w:\settings" `
+        -EnvironmentName Integration `
+        -ComputerName Unused `
+        -ApplicationName MyWebsite `
+        -Version 12345 `
+        -Resolve
+
+    It 'returns non-placeholder application variables specified at the environment level' {
+        Test-ConfigurationVariable $settings appkey4 appvalue4 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }     
+
+    It 'returns placeholder-injected in application variables specified at the environment level' {
+        Test-ConfigurationVariable $settings appkey5 envvalue1 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }    
+
+    It 'returns environment-level application variable instead of default' {
+        Test-ConfigurationVariable $settings appkey1 appvalue1 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }
+
+    It 'returns non-placeholder default variable scoped to the environment when no environment override exists' {
+        Test-ConfigurationVariable $settings appkey2 appdefaultvalue2 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }    
+
+    It 'returns placeholder-injected default variable scoped to the environment when no environment override exists' {
+        Test-ConfigurationVariable $settings appkey3 envvalue1 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }    
+
+    It 'returns only the expected number of results' {
+        $settings | Measure-Object | select -expand Count | should be 5
+    }
+}
+
+Describe 'Get-ConfigurationVariable, getting configuration' {
 
     Context 'with a non-file URI' {
 

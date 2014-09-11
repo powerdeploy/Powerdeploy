@@ -3,11 +3,11 @@ function New-ConfigurationVariable {
     [CmdletBinding()]
     param (
         [String]
-        [Parameter(Mandatory = $true)]
+        [Parameter(Position = 0, Mandatory = $true)]
         $Name,
 
         [String]
-        [Parameter(Mandatory = $true)]
+        [Parameter(Position = 1, Mandatory = $true)]
         $Value,
 
         [String[]]

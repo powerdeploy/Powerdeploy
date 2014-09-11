@@ -37,8 +37,7 @@ New-Alias -Name Publish-Package -Value Invoke-Powerdeploy
         Get-ConfigurationVariable, `
         Install-DeploymentPackage, `
         Invoke-Powerdeploy, `
-        New-DeploymentPackage, `
-        Resolve-ConfigurationVariable `
+        New-DeploymentPackage `
     -Alias `
         Publish-Package
 
