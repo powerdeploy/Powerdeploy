@@ -3,73 +3,52 @@ function Get-ConfigurationVariable {
     [CmdletBinding(DefaultParameterSetName="__AllParameterSets")]
     param (
         [System.Uri]
-        [Parameter(Mandatory = $true)]
-        $SettingsPath
+        [Parameter(Position = 0, Mandatory = $true)]
+        $SettingsPath,
 
-        # [string]
-        # [Parameter(Mandatory = $false)]
-        # $EnvironmentName,
+        [string]
+        [Parameter(Mandatory = $false)]
+        $EnvironmentName,
 
-        # [String]
-        # [Parameter(Mandatory = $false)]
-        # $ComputerName,
+        [String]
+        [Parameter(Mandatory = $false)]
+        $ComputerName,
 
-        # [Switch]
-        # [Parameter(Mandatory = $false)]
-        # $AsHashTable
+        [String]
+        [Parameter(Mandatory = $false, ParameterSetName = "Application")]
+        $ApplicationName,
+
+        [String]
+        [Parameter(Mandatory = $false, ParameterSetName = "Application")]
+        $Version 
     )
 
-    function New-DeploymentVariable($scope, $scopeName, $dictionary) {
-        $dictionary.GetEnumerator() | % { 
-            $settingName = $_.Name
-            $settingValue = $_.Value
+    function main {
+        Write-Verbose "Attempting to load settings from requested URI ($SettingsPath)..."
+        $parsedUri = New-Object System.Uri $SettingsPath
 
-            if ($settingName -eq 'Overrides') {
-                $settingValue.Computers.GetEnumerator() | % {
-                    New-DeploymentVariable @('Environment', 'Computer') @($environmentName, ($_.Name)) $_.Value
-                }
-            }
-            else {
-                New-Object PSObject -Property @{
-                    Type = 'NameValue'
-                    Name = $settingName
-                    Value = $settingValue
-                    Scope = $scope
-                    ScopeName = $scopeName
-                }
-            }
-        }
-    }
-
-    function processPsonSettings($path) {
-        $settings = Invoke-Expression (Get-Content $path | out-string)
-
-        $settings.environments.GetEnumerator() | % { 
-            $environmentName = $_.Name
-            $members = $_.Value
-
-            New-DeploymentVariable @('Environment') @($environmentName) $members
-        }
-    }
-
-    Write-Verbose "Attempting to load settings from requested URI ($SettingsPath)..."
-    $parsedUri = New-Object System.Uri $SettingsPath
-
-    if ($parsedUri.Scheme -ne 'file') {
-        throw 'Only filesystem based settings are currently supported.'
-    }
-
-    $psonPath = Join-Path $SettingsPath.LocalPath Settings.pson
-
-    if (!(Test-Path $psonPath)) {
-            throw 'No settings file was found in the specified path.'
+        if ($parsedUri.Scheme -ne 'file') {
+            throw 'Only filesystem based settings are currently supported.'
         }
 
-    $results = processPsonSettings($psonPath)
+        $parameters = @{ SettingsPath = $SettingsPath.LocalPath }
 
-    # if (-not [String]::IsNullOrEmpty($EnvironmentName)) {
-    #     $results = $results | Where-Object { $_.Scope -contains 'Environment' -and $_.ScopeName[0] -eq $EnvironmentName }
-    # }
+        if (-not [String]::IsNullOrEmpty($EnvironmentName)) {
+            $parameters.EnvironmentName = $EnvironmentName
+        }
 
-    $results
+        if (-not [String]::IsNullOrEmpty($ApplicationName)) {
+            $parameters.ApplicationName = $ApplicationName
+        }
+
+        if (-not [String]::IsNullOrEmpty($Version)) {
+            $parameters.Version = $Version
+        }
+
+        $results = GetFilesystemConfiguration @parameters
+
+        $results
+    }
+
+    main
 }

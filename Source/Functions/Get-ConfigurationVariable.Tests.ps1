@@ -1,21 +1,22 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+. $here\GetLatestApplicableVersion.ps1
+. $here\GetFilesystemConfiguration.ps1
+. $here\New-ConfigurationVariable.ps1
 . $here\$sut
 . $here\..\TestHelpers.ps1
 
-function Have($value, $expected) {
+function Test-ConfigurationVariable($actual, $name, $value, $scope, $scopeName) {
+    $actual | ? {
+            $_.Name -eq $name -and `
+            $_.Value -eq $value -and `
+            ((Compare-Object $_.Scope $scope) -eq $null) -and
+            ((Compare-Object $_.ScopeName $scopeName) -eq $null)
+    } | Measure-Object | Select -Expand Count | %{ $_ -eq 1}    
+}
 
-        $propertiesToTest = $expected | select -expand Keys
-        Write-Host $propertiesToTest
-        $value | convertto-json | write-host
-        $expected | convertto-json | write-host
-        $value | Compare-Object `
-            -ReferenceObject (New-Object PSObject -Property $expected) `
-            -Property $propertiesToTest | Set-Variable differences
-            #-ExcludeDifferent `
-            #-IncludeEqual `
-
-        $differences -eq $null
+function variable($name, $value, $scope, $scopeName) {
+    New-ConfigurationVariable $name $value ($scope -split '/') ($scopeName -split '/')
 }
 
 Describe 'Get-ConfigurationVariable' {
@@ -25,202 +26,55 @@ Describe 'Get-ConfigurationVariable' {
         $uri = 'http://someserver'
 
         $result = Capture { Get-ConfigurationVariable -SettingsPath $uri }
-        
+
         It 'throws an exception' {
             $result.message | should be 'Only filesystem based settings are currently supported.'
         }
     }
 
-    # URI parsing for drives requires a standard 1-letter drive name.
-    
+    Context 'with a file URI' {
+        
+        Mock GetFilesystemConfiguration -ParameterFilter { $SettingsPath -eq "W:\settings"} {
+            variable 'key1' 'value1' 'Environment' 'Integration'
+        } -Verifiable
 
-    Setup -Directory Placeholder
-    New-PSDrive W FileSystem TestDrive:\ | Out-Null
+        $settings = Get-ConfigurationVariable -SettingsPath "w:\settings"
 
-    Context 'with a file URI, given no settings file found in specified directory' {
+        It 'gets configuration from the filesystem' {
+            Assert-VerifiableMocks
+        }
 
-        $uri = 'file://W:\somedirectory'
-
-        $result = Capture { Get-ConfigurationVariable -SettingsPath $uri }
-
-        It 'throws an result' {
-            $result.message | should be 'No settings file was found in the specified path.'
+        It 'returns results from the filesystem configuration' {
+            Test-ConfigurationVariable $settings 'key1' 'value1' @('Environment') @('Integration') | should be $true            
         }
     }
 
+    Context 'with a file URI and all filters' {
 
-    Context 'with a file URI, given settings file in specified directory' {# with settings for environments and environment computers' {
+        Mock GetFilesystemConfiguration `
+            -ParameterFilter { 
+                $SettingsPath -eq "W:\settings" -and
+                $EnvironmentName -eq 'Integration' -and
+                $ApplicationName -eq 'MyWebsite' -and
+                $Version -eq '1.2.3'
+            } `
+            -MockWith {
+                variable 'key1' 'value1' 'Environment' 'Integration'
+            } `
+            -Verifiable
 
-        Setup -File somedirectory\Settings.pson @'
- @{ 
-    environments = @{ 
-        test = @{
-            this = "that-test"
+        $settings = Get-ConfigurationVariable `
+            -SettingsPath "w:\settings" `
+            -EnvironmentName 'Integration' `
+            -ApplicationName 'MyWebsite' `
+            -Version '1.2.3'
+
+        It 'gets configuration from the filesystem' {
+            Assert-VerifiableMocks
         }
-        prod = @{
-            that = "this"
-        }
-    }
-}
-'@
 
-        $uri = 'file://W:\somedirectory'
-
-        $settings = Get-ConfigurationVariable -SettingsPath $uri
-
-        It 'returns all settings for all environments' {
-            $settings | Measure-Object | Select -Expand Count | should be 2
-            $settings | ? {
-                $_.Name -eq 'this' -and `
-                $_.Value -eq 'that-test' -and `
-                $_.Scope -contains 'Environment' -and `
-                $_.ScopeName -contains 'test'
-            } | Measure-Object | Select -Expand Count | should be 1 
-            $settings | ? {
-                $_.Name -eq 'that' -and `
-                $_.Value -eq 'this' -and `
-                $_.Scope -contains 'Environment' -and `
-                $_.ScopeName -contains 'prod'
-            } | Measure-Object | Select -Expand Count | should be 1 
+        It 'returns results from the filesystem configuration' {
+            Test-ConfigurationVariable $settings 'key1' 'value1' @('Environment') @('Integration') | should be $true            
         }
     }
-
-    Context 'with a file URI, given settings file in specified directory and a matching computer override' {
-
-        Setup -File somedirectory\Settings.pson @'
- @{ 
-    environments = @{ 
-        prod = @{
-            this = "that"
-            that = "this"
-            Overrides = @{
-                            Computers = @{
-                                ROVER1 = @{
-                                    this = 'mars'
-                                    what = 'doesntmatter'
-                                }
-                            }
-                        }
-        }
-    }
-}
-'@
-
-        $uri = 'file://W:\somedirectory'
-
-        $settings = Get-ConfigurationVariable -SettingsPath $uri
-
-        It 'returns environment-scoped settings' {
-            $settings | ? {
-                $_.Name -eq 'this' -and `
-                $_.Value -eq 'that' -and `
-                $_.Scope -contains 'Environment' -and `
-                $_.ScopeName -contains 'prod'
-            } | Measure-Object | Select -Expand Count | should be 1 
-            $settings | ? {
-                $_.Name -eq 'that' -and `
-                $_.Value -eq 'this' -and `
-                $_.Scope -contains 'Environment' -and `
-                $_.ScopeName -contains 'prod'
-            } | Measure-Object | Select -Expand Count | should be 1 
-        }
-
-        It 'returns environmentcomputer-scoped settings' {
-            $settings | ? {
-                $_.Name -eq 'this' -and `
-                $_.Value -eq 'mars' -and `
-                ($_.Scope -contains 'Environment' -and $_.Scope -contains 'Computer') -and `
-                ($_.ScopeName -contains 'prod' -and $_.ScopeName -contains 'ROVER1')
-            } | Measure-Object | Select -Expand Count | should be 1         
-        }
-
-        # It 'returns only computer overrides that have enviroment-scoped settings' {
-        #     $settings | Measure-Object | Select -Expand Count | should be 3
-        # }
-    }
-
-    Context 'given settings file in specified directory and a matching computer override for multiple environments' {
-
-        Setup -File somedirectory\Settings.pson @'
- @{ 
-    environments = @{
-        test = @{
-            this = "that-test"
-            that = "this-test"
-            Overrides = @{
-                            Computers = @{
-                                ROVER1 = @{
-                                    this = 'mars-test'
-                                }
-                            }
-                        }
-        }
-        prod = @{
-            this = "that"
-            Overrides = @{
-                            Computers = @{
-                                ROVER1 = @{
-                                    this = 'mars'
-                                }
-                                ROVER2 = @{
-                                    this = 'mars2'
-                                }
-                            }
-                        }
-        }
-    }
-}
-'@
-
-        $uri = 'file://W:\somedirectory'
-
-        # Context 'with an environment name' {
-
-        #     $settings = Get-ConfigurationVariable -SettingsPath $uri -Environment 'prod'
-
-        #     It 'returns only settings scoped to the environment' {
-        #         $settings | Measure-Object | Select -Expand count | should be 3
-        #         $settings | ? {
-        #             $_.Name -eq 'this' -and `
-        #             $_.Value -eq 'that' -and `
-        #             ($_.Scope -contains 'Environment') -and `
-        #             ($_.ScopeName -contains 'prod')
-        #         } | Measure-Object | Select -Expand Count | should be 1  
-        #         $settings | ? {
-        #             $_.Name -eq 'this' -and `
-        #             $_.Value -eq 'mars' -and `
-        #             ($_.Scope -contains 'Environment' -and $_.Scope -contains 'Computer') -and `
-        #             ($_.ScopeName -contains 'prod' -and $_.ScopeName -contains 'ROVER1')
-        #         } | Measure-Object | Select -Expand Count | should be 1  
-        #         $settings | ? {
-        #             $_.Name -eq 'this' -and `
-        #             $_.Value -eq 'mars2' -and `
-        #             ($_.Scope -contains 'Environment' -and $_.Scope -contains 'Computer') -and `
-        #             ($_.ScopeName -contains 'prod' -and $_.ScopeName -contains 'ROVER2')
-        #         } | Measure-Object | Select -Expand Count | should be 1  
-        #     }
-        # }
-
-        # Context 'with an environment and computer name' {
-
-        #     $settings = Get-ConfigurationVariable -SettingsPath $uri -Environment 'prod' -Computer 'rover1'
-
-        #     It 'returns only settings scoped to the environment or to the environment and computer' {
-        #         $settings | Measure-Object | Select -Expand count | should be 2
-        #         $settings | ? {
-        #             $_.Name -eq 'this' -and `
-        #             $_.Value -eq 'that' -and `
-        #             ($_.Scope -contains 'Environment') -and `
-        #             ($_.ScopeName -contains 'prod')
-        #         } | Measure-Object | Select -Expand Count | should be 1  
-        #         $settings | ? {
-        #             $_.Name -eq 'this' -and `
-        #             $_.Value -eq 'mars' -and `
-        #             ($_.Scope -contains 'Environment' -and $_.Scope -contains 'Computer') -and `
-        #             ($_.ScopeName -contains 'prod' -and $_.ScopeName -contains 'ROVER1')
-        #         } | Measure-Object | Select -Expand Count | should be 1  
-        #     }
-        # }
-    }
-
 }
