@@ -12,7 +12,6 @@ Using-Module {
             $commands | ? Name -eq 'Install-DeploymentPackage' | should not be $null
             $commands | ? Name -eq 'Invoke-Powerdeploy' | should not be $null
             $commands | ? Name -eq 'New-DeploymentPackage' | should not be $null
-            $commands | ? Name -eq 'Resolve-ConfigurationVariable' | should not be $null
         }
     }
 }
