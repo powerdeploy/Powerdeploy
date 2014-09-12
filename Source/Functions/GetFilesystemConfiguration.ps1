@@ -25,7 +25,7 @@ function GetFilesystemConfiguration {
 
         if (Test-Path $environmentRootPath) {
             if (-not [String]::IsNullOrEmpty($EnvironmentName)) {
-                $results += @(emitEnvironmentVariables $environmentRootPath $EnvironmentName)
+                emitEnvironmentVariables $environmentRootPath $EnvironmentName
             }
             else {
                 emitEnvironmentVariablesAll $environmentRootPath
@@ -36,10 +36,8 @@ function GetFilesystemConfiguration {
 
         if ($PSCmdlet.ParameterSetName -eq 'Application') {
             $applicationRootPath = Join-Path $SettingsPath app
-            $results += @(emitApplicationVariables (Join-Path $applicationRootPath $ApplicationName) $Version $EnvironmentName)
+            emitApplicationVariables (Join-Path $applicationRootPath $ApplicationName) $Version $EnvironmentName
         }
-
-        $results
     }
 
     function New-DeploymentVariable($scope, $scopeName, $dictionary) {
@@ -97,10 +95,8 @@ function GetFilesystemConfiguration {
 
         $envVariablesPath = Join-Path $envVariablesRootPath "$environment.settings.pson"
         if (Test-Path $envVariablesPath) {
-            $specific = @(processSimplePson @('Environment') @($environment) $envVariablesPath)
+            processSimplePson @('Environment') @($environment) $envVariablesPath
         }
-
-        $specific
     }
 
     function emitApplicationVariables($appVariablesPath, $version, $environmentName) {
@@ -129,7 +125,7 @@ function GetFilesystemConfiguration {
                 $psonPath = Join-Path $versionPath Settings.pson
 
                 Write-Verbose "Loading application configuration is coming from $psonPath."
-                $defaults = processSimplePson @('Application', 'Version') @($applicationName, $latestApplicableVersion) $psonPath
+                processSimplePson @('Application', 'Version') @($applicationName, $latestApplicableVersion) $psonPath
 
                 $environmentFiles = Get-ChildItem $versionPath | ? { $_ -match '(?<environment>^[0-9A-Za-z]+).settings.pson$' } | % { $Matches }
 
@@ -141,12 +137,9 @@ function GetFilesystemConfiguration {
                         $psonPath = Join-Path $versionPath $filename
 
                         Write-Verbose "Loading environmental application configuration from $psonPath"
-                        $specific += @(processSimplePson @('Application', 'Version', 'Environment') @($applicationName, $latestApplicableVersion, $environment) $psonPath)
+                        processSimplePson @('Application', 'Version', 'Environment') @($applicationName, $latestApplicableVersion, $environment) $psonPath
                     }
                 }
-
-                $specific
-                $defaults
             }
         }
     }
