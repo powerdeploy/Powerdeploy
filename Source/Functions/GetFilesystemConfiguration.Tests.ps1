@@ -12,6 +12,38 @@ function Test-ConfigurationVariable($actual, $name, $value, $scope, $scopeName) 
     } | Measure-Object | Select -Expand Count | %{ $_ -eq 1}    
 }
 
+function setupFileHierarchy {
+        Setup -File somedirectory\app\consoleapp\12345\settings.pson "@{ consoleapp12345 = 'consoleapp12345value' }"
+        Setup -File somedirectory\app\consoleapp\12345\acceptance.settings.pson "@{ consoleapp12345acceptance = 'consoleapp12345acceptancevalue' }"
+        Setup -File somedirectory\app\consoleapp\12345\integration.settings.pson "@{ consoleapp12345integration = 'consoleapp12345integrationvalue' }"
+        Setup -File somedirectory\app\consoleapp\23456\settings.pson "@{ consoleapp23456 = 'consoleapp23456value' }"
+        Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
+        Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
+        Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
+        Setup -File somedirectory\env\server02.acceptance.settings.pson "@{ envacceptanceserver02 = 'envacceptanceserver02value' }"
+        Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
+        Setup -File somedirectory\env\server02.integration.settings.pson "@{ envintegrationserver02 = 'envintegrationserver02value' }"
+} 
+
+Describe "GetFilesystemConfiguration, given environment computer override files" {
+    Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
+    Setup -File somedirectory\env\server02.acceptance.settings.pson "@{ envacceptanceserver02 = 'envacceptanceserver02value' }"
+
+    Context 'with computer filter' {
+        $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -ComputerName server01
+
+        It 'returns environment-computer-scoped settings for specified computer' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+        }
+
+        It 'returns no unexpected settings' {
+            $settings | Measure-Object | Select -Expand Count | should be 1
+        }
+    }
+}
+
 Describe "GetFilesystemConfiguration, given files for applications and environments" {
 
     Context 'with no filters, given multiple files at all levels' {
@@ -22,17 +54,24 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory
 
         It 'returns environment-scoped settings for all environments' {
             Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
             Test-ConfigurationVariable $settings 'envintegration' 'envintegrationvalue' @('Environment') @('integration') | should be $true
-         }
- 
+        }
+
+        It 'returns environment-computer-scoped settings for all environment computers' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+            Test-ConfigurationVariable $settings 'envintegrationserver01' 'envintegrationserver01value' @('Environment','Computer') @('integration','server01') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 2
+            $settings | Measure-Object | Select -Expand Count | should be 4
         }
     }
 
@@ -44,7 +83,9 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -Environment acceptance
 
@@ -52,8 +93,12 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
         }
 
+        It 'returns environment-computer-scoped settings for the environment' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 1
+            $settings | Measure-Object | Select -Expand Count | should be 2
         }
     }
 
@@ -65,7 +110,9 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -ApplicationName consoleapp
 
@@ -86,8 +133,13 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envintegration' 'envintegrationvalue' @('Environment') @('integration') | should be $true
         }
 
+        It 'returns environment-computer-scoped settings for all environment computers' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+            Test-ConfigurationVariable $settings 'envintegrationserver01' 'envintegrationserver01value' @('Environment','Computer') @('integration','server01') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 8
+            $settings | Measure-Object | Select -Expand Count | should be 10
         }
     }
 
@@ -99,7 +151,9 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -ApplicationName consoleapp -Environment acceptance
 
@@ -117,8 +171,12 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
         }
 
+        It 'returns environment-computer-scoped settings for the environment' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 5
+            $settings | Measure-Object | Select -Expand Count | should be 6
         }
     }
 
@@ -130,7 +188,9 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -ApplicationName consoleapp -Version 12345
     
@@ -148,8 +208,13 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envintegration' 'envintegrationvalue' @('Environment') @('integration') | should be $true
         }
 
+        It 'returns environment-computer-scoped settings for all environment computers' {
+            Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
+            Test-ConfigurationVariable $settings 'envintegrationserver01' 'envintegrationserver01value' @('Environment','Computer') @('integration','server01') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 5
+            $settings | Measure-Object | Select -Expand Count | should be 7
         }
     }
 
@@ -161,7 +226,9 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory -ApplicationName consoleapp -Version 12345 -Environment acceptance
     
@@ -177,8 +244,12 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
         }
 
+        It 'return environment-scoped settings for the specified environment' {
+            Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 3
+            $settings | Measure-Object | Select -Expand Count | should be 4
         }
     }
 }

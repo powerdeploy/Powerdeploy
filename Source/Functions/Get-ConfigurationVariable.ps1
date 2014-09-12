@@ -7,13 +7,13 @@ function Get-ConfigurationVariable {
         $SettingsPath,
 
         [string]
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $true, ParameterSetName = "Environment")]
         [Parameter(Mandatory = $false, ParameterSetName = "Application")]
         [Parameter(Mandatory = $true, ParameterSetName = "Resolve")]
         $EnvironmentName,
 
         [String]
-        [Parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false, ParameterSetName = "Environment")]
         [Parameter(Mandatory = $false, ParameterSetName = "Application")]
         [Parameter(Mandatory = $true, ParameterSetName = "Resolve")]
         $ComputerName,
@@ -36,8 +36,6 @@ function Get-ConfigurationVariable {
         [Parameter(Mandatory = $false, ParameterSetName = "Resolve")]
         $AsHashTable
     )
-
-    # resolve = apply values for target
     function main {
         Write-Verbose "Attempting to load settings from requested URI ($SettingsPath)..."
         $parsedUri = New-Object System.Uri $SettingsPath
@@ -60,6 +58,10 @@ function Get-ConfigurationVariable {
             $parameters.Version = $Version
         }
 
+        if (-not [String]::IsNullOrEmpty($ComputerName)) {
+            $parameters.ComputerName = $ComputerName
+        }
+
         $results = GetFilesystemConfiguration @parameters
 
         if ($PSCmdlet.ParameterSetName -eq 'Resolve') {
@@ -71,7 +73,19 @@ function Get-ConfigurationVariable {
             # as the hash table structure we'll output is simply name value pairs with
             # no hierarchy (for environments, computers, etc.).
 
-            $environmentVariables = $results | ? { -not (compare $_.Scope @('Environment')) }
+            $computerEnvironmentVariables = $results | ? { -not (compare $_.Scope @('Environment','Computer')) }
+            $environmentVariables = $results `
+                | ? { -not (compare $_.Scope @('Environment')) } `
+                | % {
+                    $variable = $_
+                    
+                    $matchingOverride = $computerEnvironmentVariables | ? { $_.Name -eq $variable.Name }
+                    if ($matchingOverride -ne $null) {
+                        $variable.Value = $matchingOverride.Value
+                    }
+
+                    $variable
+                }
             $applicationDefaultVariables = $results | ? { -not (compare $_.Scope @('Application','Version')) }
             $applicationEnvironmentVariables = $results | ? { -not (compare $_.Scope @('Application','Version','Environment')) }
 

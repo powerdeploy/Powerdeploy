@@ -36,7 +36,7 @@ Describe 'Get-ConfigurationVariable: resolving configuration as hashtable, given
     $settings = Get-ConfigurationVariable `
         -SettingsPath "w:\settings" `
         -EnvironmentName Integration `
-        -ComputerName Unused `
+        -ComputerName Server01 `
         -ApplicationName MyWebsite `
         -Version 12345 `
         -Resolve `
@@ -71,6 +71,7 @@ Describe 'Get-ConfigurationVariable: resolving configuration, given app configur
     
     Mock GetFilesystemConfiguration -ParameterFilter { $SettingsPath -eq "W:\settings"} {
         variable envkey1 envvalue1 Environment Integration
+        variable envkey2 envvalue2 Environment Integration
         
         variable appkey1 appdefaultvalue1 Application,Version MyWebsite,12345 # Key with override for environment
         variable appkey2 appdefaultvalue2 Application,Version MyWebsite,12345 # Key with no override for environment
@@ -79,12 +80,16 @@ Describe 'Get-ConfigurationVariable: resolving configuration, given app configur
         variable appkey1 appvalue1 Application,Version,Environment MyWebsite,12345,Integration # Key with default
         variable appkey4 appvalue4 Application,Version,Environment MyWebsite,12345,Integration # Key with no default
         variable appkey5 '${env:envkey1}' Application,Version,Environment MyWebsite,12345,Integration # Key with no default using placeholder
+        variable appkey6 '${env:envkey2}' Application,Version,Environment MyWebsite,12345,Integration # Key with no default using placeholder
+        
+        variable compkey1 compvalue1 Environment,Computer Integration,Server01
+        variable envkey2 compenvvalue2 Environment,Computer Integration,Server01
     }
 
     $settings = Get-ConfigurationVariable `
         -SettingsPath "w:\settings" `
         -EnvironmentName Integration `
-        -ComputerName Unused `
+        -ComputerName Server01 `
         -ApplicationName MyWebsite `
         -Version 12345 `
         -Resolve
@@ -107,10 +112,14 @@ Describe 'Get-ConfigurationVariable: resolving configuration, given app configur
 
     It 'returns placeholder-injected default variable scoped to the environment when no environment override exists' {
         Test-ConfigurationVariable $settings appkey3 envvalue1 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
-    }    
+    }     
+
+    It 'returns placeholder-injected in application variables with computer override specified at the environment level' {
+        Test-ConfigurationVariable $settings appkey6 compenvvalue2 Application,Version,Environment MyWebsite,12345,Integration | should be $true            
+    }     
 
     It 'returns only the expected number of results' {
-        $settings | Measure-Object | select -expand Count | should be 5
+        $settings | Measure-Object | select -expand Count | should be 6
     }
 }
 
@@ -151,6 +160,7 @@ Describe 'Get-ConfigurationVariable, getting configuration' {
                 $SettingsPath -eq "W:\settings" -and
                 $EnvironmentName -eq 'Integration' -and
                 $ApplicationName -eq 'MyWebsite' -and
+                $ComputerName -eq 'server01' -and
                 $Version -eq '1.2.3'
             } `
             -MockWith {
@@ -162,6 +172,7 @@ Describe 'Get-ConfigurationVariable, getting configuration' {
             -SettingsPath "w:\settings" `
             -EnvironmentName 'Integration' `
             -ApplicationName 'MyWebsite' `
+            -ComputerName 'server01' `
             -Version '1.2.3'
 
         It 'gets configuration from the filesystem' {

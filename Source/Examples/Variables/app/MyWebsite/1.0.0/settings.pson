@@ -3,4 +3,5 @@
     'DebugLevel' = 'Verbose'
     'OtherServiceUrl' = 'http://otherhost:8122/getvalues'
     'ApiVersion' = '1.0.0'
+    'PaymentProcessor' = '${env:PaymentServiceUrl}'
 }

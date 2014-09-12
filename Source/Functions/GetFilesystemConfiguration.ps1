@@ -3,9 +3,13 @@ function GetFilesystemConfiguration {
         [Parameter(Mandatory = $true)]
         $SettingsPath,
 
-        [string]
+        [String]
         [Parameter(Mandatory = $false)]
         $EnvironmentName,
+
+        [String]
+        [Parameter(Mandatory = $false)]
+        $ComputerName,
 
         [String]
         [Parameter(Mandatory = $false, ParameterSetName = "Application")]
@@ -17,21 +21,17 @@ function GetFilesystemConfiguration {
     )
 
     function main {
-        # $psonPath = Join-Path $SettingsPath Settings.pson
-
-        # if (Test-Path $psonPath) {
-        #     $results = emitEnvironmentVariablesOld($psonPath)
-        # }
-        # elseif ($PSCmdlet.ParameterSetName -ne 'Application') {
-        #     #throw 'No settings file was found in the specified path.'
-        # }
-
         $environmentRootPath = Join-Path $SettingsPath env
-        if (-not [String]::IsNullOrEmpty($EnvironmentName)) {
-            $results += @(emitEnvironmentVariables $environmentRootPath $EnvironmentName)
-        }
-        elseif (Test-Path $environmentRootPath) {
-            emitEnvironmentVariablesAll $environmentRootPath
+
+        if (Test-Path $environmentRootPath) {
+            if (-not [String]::IsNullOrEmpty($EnvironmentName)) {
+                $results += @(emitEnvironmentVariables $environmentRootPath $EnvironmentName)
+            }
+            else {
+                emitEnvironmentVariablesAll $environmentRootPath
+            }
+
+            emitEnvironmentComputerVariables $environmentRootPath $EnvironmentName $ComputerName
         }
 
         if ($PSCmdlet.ParameterSetName -eq 'Application') {
@@ -46,7 +46,6 @@ function GetFilesystemConfiguration {
         $dictionary.GetEnumerator() | % { 
             $settingName = $_.Name
             $settingValue = $_.Value
-
             if ($settingName -eq 'Overrides') {
                 $settingValue.Computers.GetEnumerator() | % {
                     New-DeploymentVariable @('Environment', 'Computer') @($environmentName, ($_.Name)) $_.Value
@@ -64,17 +63,6 @@ function GetFilesystemConfiguration {
         }
     }
 
-    function emitEnvironmentVariablesOld($path) {
-        $settings = Invoke-Expression (Get-Content $path | out-string)
-
-        $settings.environments.GetEnumerator() | % { 
-            $environmentName = $_.Name
-            $members = $_.Value
-
-            New-DeploymentVariable @('Environment') @($environmentName) $members
-        }
-    }
-
     function processSimplePson($scope, $scopeName, $path) {
         $settings = Invoke-Expression (Get-Content $path -Raw)
         New-DeploymentVariable $scope $scopeName $settings
@@ -88,6 +76,18 @@ function GetFilesystemConfiguration {
         $environments | %{ emitEnvironmentVariables $envVariablesRootPath $_ }
     }
 
+    function emitEnvironmentComputerVariables($envVariablesRootPath, $environment, $computer) {
+       Get-ChildItem $envVariablesRootPath `
+            | ? { $_ -match '^(?<computer>[^.]+)\.(?<environment>[^.]+)\.settings\.pson$' } `
+            | ? { [String]::IsNullOrEmpty($computer) -or ($Matches.computer -eq $computer) } `
+            | ? { [String]::IsNullOrEmpty($environment) -or ($Matches.environment -eq $environment) } `
+            | % {
+                $match = $Matches
+                Write-Verbose "Processing computer variables for '$($match.computer)' in environment '$($match.environment)'..."
+                processSimplePson @('Environment', 'Computer') @($match.environment, $match.computer) $_.FullName
+            }        
+    }
+
     function emitEnvironmentVariables($envVariablesRootPath, $environment) {
         # $globalVariablesPath = Join-Path $envVariablesRootPath "settings.pson"
         # if(Test-Path $globalVariablesPath) {
@@ -97,23 +97,14 @@ function GetFilesystemConfiguration {
 
         $envVariablesPath = Join-Path $envVariablesRootPath "$environment.settings.pson"
         if (Test-Path $envVariablesPath) {
-            $specific = processSimplePson @('Environment') @($environment) $envVariablesPath
+            $specific = @(processSimplePson @('Environment') @($environment) $envVariablesPath)
         }
 
         $specific
-        # $defaults | ? { ($specific | Select-Object -Expand Name) -notcontains $_.Name  }
     }
-
-    # function emitApplicationVariablesAll($appVariablesRootPath) {
-    #     Write-Verbose 'Processing variables for all applications...'
-    #     $applications = Get-ChildItem $appVariablesRootPath -Directory 
-    #     $applications | %{ emitApplicationVariables (Join-Path $appVariablesRootPath $_) }
-    # }
 
     function emitApplicationVariables($appVariablesPath, $version, $environmentName) {
         if (Test-Path $appVariablesPath) {
-            # $appVariablesPath = Join-Path $appVariablesRootPath $ApplicationName
-
             # We don't support application-scoped variables (agnostic of a version),
             # so if one is not specified, we'll return all versions.
             if ([String]::IsNullOrEmpty($version)) {
@@ -155,7 +146,7 @@ function GetFilesystemConfiguration {
                 }
 
                 $specific
-                $defaults # | ? { ($specific | Select-Object -Expand Name) -notcontains $_.Name  }
+                $defaults
             }
         }
     }
