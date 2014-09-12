@@ -70,7 +70,7 @@ function GetFilesystemConfiguration {
 
     function emitEnvironmentVariablesAll($envVariablesRootPath) {
         $environments = Get-ChildItem $envVariablesRootPath | `
-            ? { $_ -match '(?<environment>^[0-9A-Za-z]+).settings.pson$' } | `
+            ? { $_ -match '^(?<environment>[a-zA-Z0-9_\-]+)\.settings\.pson$' } | `
             % { $Matches.environment }
 
         $environments | %{ emitEnvironmentVariables $envVariablesRootPath $_ }
@@ -78,7 +78,7 @@ function GetFilesystemConfiguration {
 
     function emitEnvironmentComputerVariables($envVariablesRootPath, $environment, $computer) {
        Get-ChildItem $envVariablesRootPath `
-            | ? { $_ -match '^(?<computer>[^.]+)\.(?<environment>[^.]+)\.settings\.pson$' } `
+            | ? { $_ -match '^(?<computer>[^.]+)\.(?<environment>[a-zA-Z0-9_\-]+)\.settings\.pson$' } `
             | ? { [String]::IsNullOrEmpty($computer) -or ($Matches.computer -eq $computer) } `
             | ? { [String]::IsNullOrEmpty($environment) -or ($Matches.environment -eq $environment) } `
             | % {
