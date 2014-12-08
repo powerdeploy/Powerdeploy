@@ -25,20 +25,19 @@
 $global:PDVersion = '$version$'
 $global:PDRunRoot = $PSScriptRoot
 
-Resolve-Path $global:PDRunRoot\Functions\*.ps1 | 
+Resolve-Path $global:PDRunRoot\Functions\*.ps1 |
     ? { -not ($_.ProviderPath.Contains(".Tests.")) } |
     % { . $_.ProviderPath }
 
 New-Alias -Name Publish-Package -Value Invoke-Powerdeploy
 
- Export-ModuleMember `
+Export-ModuleMember `
     -Function `
         Add-ConfigurationVariable , `
         Get-ConfigurationVariable, `
         Install-DeploymentPackage, `
         Invoke-Powerdeploy, `
-        New-DeploymentPackage `
+        New-DeploymentPackage, `
+        Get-SemverVersion `
     -Alias `
         Publish-Package
-
-
