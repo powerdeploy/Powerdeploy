@@ -23,10 +23,15 @@ Describe 'Get-ConfigurationVariable: resolving configuration as hashtable, given
 
     Mock GetFilesystemConfiguration -ParameterFilter { $SettingsPath -eq "W:\settings"} {
         variable envkey1 envvalue1 Environment Integration
-        
+        variable envkey2 'env. value 2' Environment Integration
+        variable envkey3 'env. value 3' Environment Integration
+        variable envkey4 'env. value 4' Environment Integration
+
         variable appkey1 appdefaultvalue1 Application,Version MyWebsite,12345 # Key with override for environment
         variable appkey2 appdefaultvalue2 Application,Version MyWebsite,12345 # Key with no override for environment
         variable appkey3 '${env:envkey1}' Application,Version MyWebsite,12345 # Key with no override using placeholder
+        variable appkey6 'This is the ${env:envkey2}!' Application,Version MyWebsite,12345 # Key with no override using placeholder with additional text
+        variable appkey7 'This is the ${env:envkey3} and ${env:envkey4}! Cool.' Application,Version MyWebsite,12345 # Key with no override using placeholder with additional text
 
         variable appkey1 appvalue1 Application,Version,Environment MyWebsite,12345,Integration # Key with default
         variable appkey4 appvalue4 Application,Version,Environment MyWebsite,12345,Integration # Key with no default
@@ -62,8 +67,16 @@ Describe 'Get-ConfigurationVariable: resolving configuration as hashtable, given
         $settings.appkey3 | should be envvalue1  
     }    
 
+    It 'returns other text in the value' {
+        $settings.appkey6 | should be "This is the env. value 2!"
+    }
+
+    It 'returns other text in the value for both env. keys' {
+        $settings.appkey7 | should be "This is the env. value 3 and env. value 4! Cool."
+    }
+
     It 'returns only the expected number of results' {
-        $settings.GetEnumerator() | Measure-Object | select -expand Count | should be 5
+        $settings.GetEnumerator() | Measure-Object | select -expand Count | should be 7
     }
 }
 

@@ -105,13 +105,14 @@ function Get-ConfigurationVariable {
             $results = $results | % {
                 $variable = $_
 
-                # Replace any placeholders in the variable.
-                if ($variable.Value -match '^\$\{env\:(?<key>.+)\}$') {
-                    $newValue = $environmentVariables `
-                        | ? { $_.Name -eq $Matches.key } `
-                        | select -expand Value
-                    $variable.Value = $newValue
+                $callback = {
+                    param($match) 
+
+                    $environmentVariables | ? { $_.Name -eq $match.Groups["key"].Value } | select -expand Value
                 }
+
+                $re = [regex]"\$\{env\:(?<key>[^\}]+)\}"
+                $variable.Value = $re.Replace($variable.Value, $callback)
 
                 $variable
             }
