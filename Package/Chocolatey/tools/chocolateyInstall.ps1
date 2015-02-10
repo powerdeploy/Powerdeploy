@@ -14,7 +14,7 @@ try {
       Write-Host 'Could not remove powerdeploy folder'
     }
 
-    Install-ChocolateyZipPackage 'powerdeploy' 'https://github.com/powerdeploy/Powerdeploy/releases/download/::version::/powerdeploy.zip' $powerdeployPath
+    Install-ChocolateyZipPackage 'powerdeploy' 'https://github.com/powerdeploy/Powerdeploy/releases/download/::version::/::download_zip_name::' $binRoot
 
     $ps_module_paths = ($env:PSModulePath -split ';')
     if ($ps_module_paths -notcontains $binRoot) {

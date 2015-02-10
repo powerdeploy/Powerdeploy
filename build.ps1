@@ -6,6 +6,7 @@ properties {
   $chocolateyFolder = Join-Path $PSScriptRoot 'Package\Chocolatey'
   $version = git describe --tags --always --dirty
   $strippedVersion = &{$version -match '^v?(?<version>.+)$' | Out-Null; $matches.version}
+  $versionedZipName = "Powerdeploy-$strippedVersion.zip"
   $changeset = 'n/a'
 }
 
@@ -18,7 +19,7 @@ task Zip {
     
     # Make the "obviously-named" package that can be dropped somewhere and
     # will not conflict with other versions of the package.
-    exec { ."$sourceFolder\Tools\7za.exe" a -r "$packageFolder\Powerdeploy-$strippedVersion.zip" "$packageFolder\temp\Powerdeploy" }
+    exec { ."$sourceFolder\Tools\7za.exe" a -r "$packageFolder\$versionedZipName" "$packageFolder\temp\Powerdeploy" }
 
     # Make the simply-named package that will be used for the GH release.
     # TODO: We don't need this right now.  We can just change the name when we upload to GitHub.
@@ -41,6 +42,7 @@ task PackageChocolatey -depends Zip {
     cat $contentFile | write-host
     (Get-Content "$contentFile") `
       | % {$_ -replace "::version::", "$version" } `
+      | % {$_ -replace "::download_zip_name::", $versionedZipName} `
       | Set-Content "$contentFile"
 
     # cpack doesn't support -OutputDirectory on nuget pack, so we need to be in the directory
