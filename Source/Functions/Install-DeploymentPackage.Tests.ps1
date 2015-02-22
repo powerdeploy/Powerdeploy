@@ -12,7 +12,6 @@ Describe 'Install-DeploymentPackage' {
     Install-DeploymentPackage `
         -PackageArchive 'somepackage_1.2.3.zip' `
         -Environment 'production' `
-        -DeploymentTempRoot testdrive:\pdtemp `
         -PackageTargetPath testdrive:\deploytome `
         -PostInstallScript { $PowerdeployDeploymentParameters | ConvertTo-Json | Out-File testdrive:\params.json } `
         -Variable @{ 'somesetting' = 'some-value' }
@@ -27,7 +26,6 @@ Describe 'Install-DeploymentPackage' {
             -and $PackageVersion -eq '1.2.3' `
             -and $EnvironmentName -eq 'production' `
             -and $DeployedFolderPath -eq 'testdrive:\deploytome' `
-            -and $DeploymentSourcePath -eq 'testdrive:\pdtemp'
         }
     }
 

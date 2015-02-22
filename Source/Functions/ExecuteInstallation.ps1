@@ -3,7 +3,6 @@ function ExecuteInstallation (
     $PackageVersion, 
     $EnvironmentName, 
     $DeployedFolderPath,
-    $DeploymentSourcePath,
     [Hashtable] $Settings) { 
 
     Import-Module "$PSScriptRoot\..\Helpers\Installer.psm1" -Verbose:$false
