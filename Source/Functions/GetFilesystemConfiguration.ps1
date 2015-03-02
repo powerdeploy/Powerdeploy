@@ -20,6 +20,10 @@ function GetFilesystemConfiguration {
         $Version
     )
 
+    $validEnvironmentCharacters = 'a-zA-Z0-9_\-\#'
+    $environmentPsonMatchExpression = "^(?<environment>[$validEnvironmentCharacters]+)\.settings\.pson$"
+    $computerEnvironmentPsonMatchExpression = "^(?<computer>[^.]+)\.(?<environment>[$validEnvironmentCharacters]+)\.settings\.pson$"
+
     function main {
         $environmentRootPath = Join-Path $SettingsPath env
 
@@ -68,7 +72,7 @@ function GetFilesystemConfiguration {
 
     function emitEnvironmentVariablesAll($envVariablesRootPath) {
         $environments = Get-ChildItem $envVariablesRootPath | `
-            ? { $_ -match '^(?<environment>[a-zA-Z0-9_\-]+)\.settings\.pson$' } | `
+            ? { $_ -match $environmentPsonMatchExpression } | `
             % { $Matches.environment }
 
         $environments | %{ emitEnvironmentVariables $envVariablesRootPath $_ }
@@ -76,7 +80,7 @@ function GetFilesystemConfiguration {
 
     function emitEnvironmentComputerVariables($envVariablesRootPath, $environment, $computer) {
        Get-ChildItem $envVariablesRootPath `
-            | ? { $_ -match '^(?<computer>[^.]+)\.(?<environment>[a-zA-Z0-9_\-]+)\.settings\.pson$' } `
+            | ? { $_ -match $computerEnvironmentPsonMatchExpression } `
             | ? { [String]::IsNullOrEmpty($computer) -or ($Matches.computer -eq $computer) } `
             | ? { [String]::IsNullOrEmpty($environment) -or ($Matches.environment -eq $environment) } `
             | % {
@@ -127,7 +131,7 @@ function GetFilesystemConfiguration {
                 Write-Verbose "Loading application configuration is coming from $psonPath."
                 processSimplePson @('Application', 'Version') @($applicationName, $latestApplicableVersion) $psonPath
 
-                $environmentFiles = Get-ChildItem $versionPath | ? { $_ -match '(?<environment>^[0-9A-Za-z]+).settings.pson$' } | % { $Matches }
+                $environmentFiles = Get-ChildItem $versionPath | ? { $_ -match $environmentPsonMatchExpression } | % { $Matches }
 
                 $environmentFiles | % {
                     if ([String]::IsNullOrEmpty($environmentName) -or `

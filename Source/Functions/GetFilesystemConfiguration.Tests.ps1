@@ -56,22 +56,26 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
         Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
+        Setup -File somedirectory\env\integration_-#.settings.pson "@{ envintegrationallchars = 'envintegrationvalue' }"
         Setup -File somedirectory\env\server01.integration.settings.pson "@{ envintegrationserver01 = 'envintegrationserver01value' }"
+        Setup -File somedirectory\env\server01.integration_-#.settings.pson "@{ envintegrationserver01allchars = 'envintegrationserver01value' }"
 
         $settings = GetFilesystemConfiguration -SettingsPath TestDrive:\somedirectory
 
         It 'returns environment-scoped settings for all environments' {
             Test-ConfigurationVariable $settings 'envacceptance' 'envacceptancevalue' @('Environment') @('acceptance') | should be $true
             Test-ConfigurationVariable $settings 'envintegration' 'envintegrationvalue' @('Environment') @('integration') | should be $true
+            Test-ConfigurationVariable $settings 'envintegrationallchars' 'envintegrationvalue' @('Environment') @('integration_-#') | should be $true
         }
 
         It 'returns environment-computer-scoped settings for all environment computers' {
             Test-ConfigurationVariable $settings 'envacceptanceserver01' 'envacceptanceserver01value' @('Environment','Computer') @('acceptance','server01') | should be $true
             Test-ConfigurationVariable $settings 'envintegrationserver01' 'envintegrationserver01value' @('Environment','Computer') @('integration','server01') | should be $true
+            Test-ConfigurationVariable $settings 'envintegrationserver01allchars' 'envintegrationserver01value' @('Environment','Computer') @('integration_-#','server01') | should be $true
         }
 
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 4
+            $settings | Measure-Object | Select -Expand Count | should be 6
         }
     }
 
@@ -102,13 +106,14 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         }
     }
 
-    Context 'with application, given multiple files at all levels' {
+    Context 'with application, given multiple files at all levels, with environments containing all allowed characters' {
         Setup -File somedirectory\app\consoleapp\12345\settings.pson "@{ consoleapp12345 = 'consoleapp12345value' }"
         Setup -File somedirectory\app\consoleapp\12345\acceptance.settings.pson "@{ consoleapp12345acceptance = 'consoleapp12345acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\12345\integration.settings.pson "@{ consoleapp12345integration = 'consoleapp12345integrationvalue' }"
         Setup -File somedirectory\app\consoleapp\23456\settings.pson "@{ consoleapp23456 = 'consoleapp23456value' }"
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
+        Setup -File somedirectory\app\consoleapp\23456\integration123_-#.settings.pson "@{ consoleapp23456allchars = 'consoleapp23456allcharsvalue' }"
         Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
         Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
@@ -126,6 +131,7 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'consoleapp23456acceptance' 'consoleapp23456acceptancevalue' @('Application','Version','Environment') @('consoleapp','23456','acceptance') | should be $true
             Test-ConfigurationVariable $settings 'consoleapp12345integration' 'consoleapp12345integrationvalue' @('Application','Version','Environment') @('consoleapp','12345','integration') | should be $true
             Test-ConfigurationVariable $settings 'consoleapp23456integration' 'consoleapp23456integrationvalue' @('Application','Version','Environment') @('consoleapp','23456','integration') | should be $true
+            Test-ConfigurationVariable $settings 'consoleapp23456allchars' 'consoleapp23456allcharsvalue' @('Application','Version','Environment') @('consoleapp','23456','integration123_-#') | should be $true
         }
 
         It 'return environment-scoped settings for the all environments' {
@@ -139,7 +145,7 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         }
 
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 10
+            $settings | Measure-Object | Select -Expand Count | should be 11
         }
     }
 
