@@ -28,7 +28,7 @@ Register-DeploymentScript -Post -Phase Install -Script {
             EnvironmentName = $deploymentContext.Parameters.EnvironmentName
             ExtractedPackagePath = $deploymentContext.Parameters.ExtractedPackagePath
         }
-        Settings = $deploymentContext.Settings
+        Settings = $deploymentContext.Variables
     }
 
     # Use RunConventions in this script unless we have a TestableRunConventions that

@@ -30,7 +30,7 @@ Describe 'Executing LegacyConventions Extension post-install' {
                 EnvironmentName = 'cloud'
                 ExtractedPackagePath = 'c:\blah'
             }
-            Settings = @{
+            Variables = @{
                 Setting1 = 'value1'
             }
         }        

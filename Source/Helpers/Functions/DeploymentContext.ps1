@@ -1,6 +1,6 @@
 $global:pddeploymentcontext = @{
     Parameters = @{ }
-    Settings = @{ }
+    Variables = @{ }
     State = @{ }
 }
 
@@ -17,15 +17,12 @@ function Set-DeploymentContext {
         $Variables = @{ }
     )
     $global:pddeploymentcontext.Parameters = @{
-            # PackageId = $PackageId
-            # PackageVersion = $PackageVersion
             PackageName = $PackageName
             PackageVersion = $PackageVersion
             EnvironmentName = $EnvironmentName
             ExtractedPackagePath = $DeployedFolderPath
-            # SettingsFilePath = $settingsFile
         }
-    $global:pddeploymentcontext.Settings = $Variables
+    $global:pddeploymentcontext.Variables = $Variables
 }
 
 function Set-DeploymentContextState {
@@ -78,9 +75,9 @@ function Get-DeploymentVariable {
     $context = Get-DeploymentContext
 
     if ([string]::IsNullOrWhitespace($Name)) {
-        $context.Settings
+        $context.Variables
     }
     else {
-        $context.Settings[$Name]
+        $context.Variables[$Name]
     }
 }
