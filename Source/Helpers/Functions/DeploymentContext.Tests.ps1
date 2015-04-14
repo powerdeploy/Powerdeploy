@@ -62,6 +62,10 @@ Describe 'Get-DeploymentVariable, with no setting name' {
         $result.setting1 | should be 'value1'
         $result.setting2 | should be 'value2'
     }
+
+    It 'returns a hashtable, instead of an object array with a hashtable and a null value' {
+        $result -is [Hashtable] | should be $true
+    }
 }
 
 Describe 'Get-DeploymentVariable, with a setting name' {

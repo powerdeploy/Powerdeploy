@@ -80,6 +80,7 @@ function Get-DeploymentVariable {
     if ([string]::IsNullOrWhitespace($Name)) {
         $context.Settings
     }
-
-    $context.Settings[$Name]
+    else {
+        $context.Settings[$Name]
+    }
 }
