@@ -29,12 +29,12 @@ function Register-DeploymentScript {
     }
 
     if ((Get-DeploymentContextState -Name scriptRegistrations) -eq $null) {
-        Set-DeploymentContextState -Name scriptRegistrations -Value @{ 
+        Set-DeploymentContextState -Name scriptRegistrations -Value @{
             'pre-Install' = @()
-            'post-Install' = @() 
+            'post-Install' = @()
         }
     }
-    (Get-DeploymentContextState -Name scriptRegistrations)."$prePost-$Phase" = $Script
+    (Get-DeploymentContextState -Name scriptRegistrations)."$prePost-$Phase" += $Script
 }
 
 function Get-RegisteredDeploymentScript {
@@ -63,7 +63,7 @@ function Get-RegisteredDeploymentScript {
         @( $state )
     }
     else {
-        @( )        
+        @( )
     }
 }
 

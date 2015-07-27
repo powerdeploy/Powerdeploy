@@ -2,8 +2,8 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\..\Common.Tests.ps1
 . $here\..\..\TestHelpers.ps1
 
-Describe 'Register-DeploymentScript, with a pre-installation script' {
-
+Describe 'Register-DeploymentScript, with a pre-installation script, given no scriptes registered' {
+    Clear-DeploymentContextState
     Register-DeploymentScript -Pre -Phase Install -Script {'hello'}
 
     It 'registers the script' {
@@ -18,6 +18,27 @@ Describe 'Register-DeploymentScript, with invalid phase' {
     It 'throws' {
         $exception.ErrorRecord.FullyQualifiedErrorId | should be 'ValidateSetFailure'
     }
+}
+
+Describe 'Register-DeploymentScript, with two pre-installation scripts, given no scripts registered' {
+  Clear-DeploymentContextState
+
+  Register-DeploymentScript -Pre -Phase Install -Script {'hello'}
+  Register-DeploymentScript -Pre -Phase Install -Script {'goodbye'}
+
+  $scripts = Get-RegisteredDeploymentScript -Pre -Phase Install
+
+  It 'results in two scripts being registered' {
+    $scripts.Length | should be 2
+  }
+
+  It 'contains the first script registered' {
+    $scripts | % { (&$_) } | ? { $_ -eq 'hello' } | should not be $null
+  }
+
+  It 'contains the second script registered' {
+    $scripts | % { (&$_) } | ? { $_ -eq 'goodbye' } | should not be $null
+  }
 }
 
 Describe 'Invoke-RegisteredDeploymentScript, with a script' {
