@@ -33,7 +33,7 @@ Describe 'Executing LegacyConventions Extension post-install' {
             Variables = @{
                 Setting1 = 'value1'
             }
-        }        
+        }
     }
     Mock Resolve-Path { "c:\FakeConvention.ps1" } -ParameterFilter { $Path -eq "$here\Conventions\*Convention.ps1" }
 
@@ -41,19 +41,21 @@ Describe 'Executing LegacyConventions Extension post-install' {
     & $global:pd_test_scriptBlock
 
     It 'runs conventions from the extension conventions directory' {
-        $mocked = Get-CalledMock TestableRunConventions
-        $mocked.BoundParameters.conventionFiles | should be "c:\FakeConvention.ps1"
+        Assert-MockCalled TestableRunConventions `
+          -ParameterFilter { $conventionFiles -eq 'c:\FakeConvention.ps1' } `
+          -Exactly 1
     }
 
     It 'passes the legacy context to the conventions' {
-        Assert-MockCalled TestableRunConventions 
-        $mocked = Get-CalledMock TestableRunConventions
-        $context = $mocked.BoundParameters.deploymentContext
-        $context.Parameters.PackageId | should be 'oh-it-works'
-        $context.Parameters.EnvironmentName | should be 'cloud'
-        $context.Parameters.PackageVersion | should be '0.0.7'
-        $context.Parameters.ExtractedPackagePath | should be 'c:\blah'
-        $context.Settings.Setting1 | should be 'value1'
+        Assert-MockCalled TestableRunConventions `
+          -ParameterFilter {
+            $deploymentContext.Parameters.PackageId -eq 'oh-it-works' -and `
+            $deploymentContext.Parameters.EnvironmentName -eq 'cloud' -and `
+            $deploymentContext.Parameters.PackageVersion -eq '0.0.7' -and `
+            $deploymentContext.Parameters.ExtractedPackagePath -eq 'c:\blah' -and `
+            $deploymentContext.Settings.Setting1 -eq 'value1'
+          } `
+        -Exactly 1
     }
 }
 
@@ -61,9 +63,9 @@ Describe 'Executing LegacyConventions Extension post-install' {
  #        PackageVersion = $PackageVersion
  #        EnvironmentName = $EnvironmentName
  #        DeploymentFilesPath = $DeploymentSourcePath
- #        ExtractedPackagePath = 
+ #        ExtractedPackagePath =
     # Mock RunConventions { $global:TestContext.conventionsHadContext = $global:TestContext.contextCalled }
-    # Mock Set-DeploymentContext { $global:TestContext.contextCalled = $true } 
+    # Mock Set-DeploymentContext { $global:TestContext.contextCalled = $true }
     # Mock Import-Module { } #-ParameterFilter { $Name -like '*Installer.psm1' }
     # #Mock Import-Module { } -ParameterFilter { $Name -like '*Installer.psm1' }
 
@@ -87,7 +89,7 @@ Describe 'Executing LegacyConventions Extension post-install' {
     # }
 
     # It 'runs conventions with old-style context' {
-    #     Assert-MockCalled RunConventions -ParameterFilter { 
+    #     Assert-MockCalled RunConventions -ParameterFilter {
     #         $deploymentContext.Parameters.PackageId -eq 'fuzzy-bunny' `
     #         -and $deploymentContext.Parameters.PackageVersion -eq '9.3.1' `
     #         -and $deploymentContext.Parameters.EnvironmentName -eq 'prod-like' `
@@ -101,4 +103,3 @@ Describe 'Executing LegacyConventions Extension post-install' {
     # }
 
 # }
-

@@ -8,7 +8,7 @@ Describe 'GetSettingsFromUri, with non-file URI' {
     $uri = 'http://someserver'
 
     $result = Capture { GetSettingsFromUri $uri 'test' }
-    
+
     It 'throws an exception' {
         $result.message | should be 'Only filesystem based settings are currently supported.'
     }
@@ -56,7 +56,7 @@ Describe 'GetSettingsFromUri' {
         }
     }
 
-    Context 'given an old-style settings file in the settings root folder' {
+    Context 'given an old-style settings file in the settings root folder and a settins file for the environment' {
 
         Setup -Dir settings
         Setup -File settings\settings.pson @'
@@ -69,22 +69,20 @@ Describe 'GetSettingsFromUri' {
 }
 '@
 
-        Context 'and a settings file for the environment' {
-            Setup -Dir settings\env\newenv
-            Setup -File settings\env\newenv\settings.pson @'
+        Setup -Dir settings\env\newenv
+        Setup -File settings\env\newenv\settings.pson @'
 @{
-    somesetting = 'some-new-value'
+somesetting = 'some-new-value'
 }
 '@
 
-            # URI parsing for drives requires a standard 1-letter drive name.
-            New-PSDrive W FileSystem TestDrive:\ | Out-Null
+        # URI parsing for drives requires a standard 1-letter drive name.
+        New-PSDrive W FileSystem TestDrive:\ | Out-Null
 
-            $settings = GetSettingsFromUri -Uri W:\settings -EnvironmentName newenv
+        $settings = GetSettingsFromUri -Uri W:\settings -EnvironmentName newenv
 
-            It 'returns the requested value from the environment settings file' {
-                $settings.somesetting | should be 'some-new-value'
-            }
+        It 'returns the requested value from the environment settings file' {
+            $settings.somesetting | should be 'some-new-value'
         }
     }
 }
@@ -93,10 +91,10 @@ Describe 'GetSettingsFromUri' {
 Describe 'GetSettingsFromUri, with computer specified' {
 
     Context 'given a settings folder exists with a settings for the specified environment with computer overrides for the computer' {
-        
+
         Setup -Dir settings\env\TEST
         Setup -File settings\env\TEST\settings.pson @'
- @{ 
+ @{
     this = "that"
     that = "theother"
     Overrides = @{

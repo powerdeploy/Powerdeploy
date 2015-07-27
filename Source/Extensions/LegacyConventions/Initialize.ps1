@@ -16,7 +16,7 @@ Register-DeploymentScript -Post -Phase Install -Script {
 
             $onDeploy = $convention.onDeploy
             &$onDeploy -PowerDeploymentContext $deploymentContext
-        } 
+        }
     }
 
     $deploymentContext = Get-DeploymentContext
@@ -40,4 +40,3 @@ Register-DeploymentScript -Post -Phase Install -Script {
 
     & $conventionRunner (Resolve-Path $PSScriptRoot\Conventions\*Convention.ps1) $context
 }
-

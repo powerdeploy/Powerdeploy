@@ -5,7 +5,7 @@ $convention = & "$here\$sut"
 
 Describe 'ConfigSettingsConvention' {
 
-  context '' {
+  context 'given a configuration file and deployment context' {
       $context = @{
           Parameters = @{
               PackageId = 'TestPackage'
@@ -17,7 +17,7 @@ Describe 'ConfigSettingsConvention' {
           Settings = @{
               ApplicationServices = 'blue32'
               ClientValidationEnabled = 'false'
-              AmpTest = '"SomeValue"'           
+              AmpTest = '"SomeValue"'
           }
       }
 
@@ -44,16 +44,16 @@ Describe 'ConfigSettingsConvention' {
 
   	It "replaces app setting with value from matching environment settings" {
   		$result = [xml](Get-Content TestDrive:\Package\test.config)
-  		
+
   		$result.configuration.appSettings.add[1].value | should be 'false'
   	}
-  	
+
   	It "replaces connectionstring with value from matching environment settings" {
   		$result = [xml](Get-Content TestDrive:\Package\test.config)
-  		
+
   		$result.configuration.connectionStrings.add[0].connectionString | should be "blue32"
   	}
-  	
+
   	It "sets value with ampersand as is without escaping" {
   		$result = [xml](Get-Content TestDrive:\Package\test.config)
 
@@ -74,7 +74,7 @@ Describe 'ConfigSettingsConvention' {
           Settings = @{
               ApplicationServices = 'blue32'
               ClientValidationEnabled = 'false'
-              AmpTest = '"SomeValue"'           
+              AmpTest = '"SomeValue"'
           }
       }
 
@@ -87,7 +87,7 @@ Describe 'ConfigSettingsConvention' {
   </connectionStrings>
 </configuration>
 "@
- 
+
     $result = (Capture { &$convention.onDeploy $context })
 
     It "errors the deployment with a meaninful error" {
