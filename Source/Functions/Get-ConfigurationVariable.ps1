@@ -34,7 +34,10 @@ function Get-ConfigurationVariable {
 
         [Switch]
         [Parameter(Mandatory = $false, ParameterSetName = "Resolve")]
-        $AsHashTable
+        $AsHashTable,
+
+        [ScriptBlock]
+        $ProcessVariable = {param($var) $var}
     )
     function main {
         Write-Verbose "Attempting to load settings from requested URI ($SettingsPath)..."
@@ -62,11 +65,11 @@ function Get-ConfigurationVariable {
             $parameters.ComputerName = $ComputerName
         }
 
-        $results = GetFilesystemConfiguration @parameters
+        $results = (GetFilesystemConfiguration @parameters | %{ &$ProcessVariable $_ })
 
         if ($PSCmdlet.ParameterSetName -eq 'Resolve') {
             # This logic assumes that we've filtered out our results to a single
-            # environment, computer, application, version.  We need this in order 
+            # environment, computer, application, version.  We need this in order
             # to promote default variables to the target environment.  If we don't
             # know, we wouldn't know which environment to target.
             # We also need to filter to a single set in order to output a hash table

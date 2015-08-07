@@ -193,7 +193,43 @@ Describe 'Get-ConfigurationVariable, getting configuration' {
         }
 
         It 'returns results from the filesystem configuration' {
-            Test-ConfigurationVariable $settings 'key1' 'value1' @('Environment') @('Integration') | should be $true            
+            Test-ConfigurationVariable $settings 'key1' 'value1' @('Environment') @('Integration') | should be $true
         }
+    }
+}
+
+Describe 'Get-ConfigurationVariable with a process script, given a setting' {
+
+    Mock GetFilesystemConfiguration `
+        -ParameterFilter {
+            $SettingsPath -eq "W:\settings" -and
+            $EnvironmentName -eq 'Integration' -and
+            $ApplicationName -eq 'MyWebsite' -and
+            $ComputerName -eq 'server01' -and
+            $Version -eq '1.2.3'
+        } `
+        -MockWith {
+            variable 'key1' 'value1' 'Environment' 'Integration'
+        }
+
+    function processVariable($variable) { }
+    Mock processVariable `
+        -ParameterFilter {
+            $variable.Name -eq 'key1' -and
+            $variable.Value -eq 'value1' -and
+            $variable.Scope -eq 'Environment' -and
+            $variable.ScopeName -eq 'Integration'
+        } -Verifiable
+
+    $settings = Get-ConfigurationVariable `
+        -SettingsPath "w:\settings" `
+        -EnvironmentName 'Integration' `
+        -ApplicationName 'MyWebsite' `
+        -ComputerName 'server01' `
+        -Version '1.2.3' `
+        -ProcessVariable {param($var) processVariable $var }
+
+    It 'processes the variable' {
+        Assert-MockCalled processVariable
     }
 }
