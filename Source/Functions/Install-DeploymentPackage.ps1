@@ -1,13 +1,13 @@
 function Install-DeploymentPackage {
 	# .ExternalHelp  powerdeploy.psm1-help.xml
-	[CmdletBinding()] 
+	[CmdletBinding()]
 	param (
 		[string][parameter(Position = 0, Mandatory = $true)]$PackageArchive,
 		[string][parameter(Position = 1, Mandatory = $true)]$Environment,
 		[string]$Role,
 		[string]$PackageTargetPath,
-		[Hashtable][Alias("Settings")]$Variable,
-	    [ScriptBlock]$PostInstallScript = { }
+		[Hashtable][Alias("Settings")]$Variable = @{ },
+		[ScriptBlock]$PostInstallScript = { }
 	)
 
 	Write-Verbose ('='*80)
@@ -29,7 +29,7 @@ function Install-DeploymentPackage {
 		if ($packagesRoot -eq $null) { $packagesRoot = "$($env:temp)\deploy.packages" }
 		$requestedExtractionPath = ("$packagesRoot\$Environment\$packageNameWithVersion" -replace 'PD_', '')
 	}
-	
+
 	$extractionPath = GenerateExtractionPath $requestedExtractionPath
 
 	ExtractPackage $PackageArchive $extractionPath
@@ -39,7 +39,7 @@ function Install-DeploymentPackage {
 	}
 	$packageId = $matches.Package
 	$packageVersion = $matches.Version
-	
+
 	Write-Verbose "Installing version $packageVersion of package $packageId..."
 
 	ExecuteInstallation `
@@ -48,7 +48,7 @@ function Install-DeploymentPackage {
 		-EnvironmentName $Environment `
 		-DeployedFolderPath $extractionPath `
 		-Settings $Variable
-	
+
 	Write-Verbose 'Package installation completed without errors.'
 
     Write-Verbose "Executing post install script..."

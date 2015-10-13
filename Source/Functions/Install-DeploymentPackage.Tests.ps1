@@ -43,8 +43,27 @@ Describe 'Install-DeploymentPackage' {
     }
 
     It 'executes the installation with the deployment settings' {
-        Assert-MockCalled ExecuteInstallation -ParameterFilter { 
+        Assert-MockCalled ExecuteInstallation -ParameterFilter {
             (&{$Settings}).somesetting -eq 'some-value'
         }
     }
+}
+
+Describe 'Install-DeploymentPackage, with no variables' {
+
+    Setup -Dir pdtemp
+
+    Mock ExtractPackage { }
+    Mock ExecuteInstallation { }
+
+    Install-DeploymentPackage `
+        -PackageArchive 'somepackage_1.2.3.zip' `
+        -Environment 'production' `
+        -PackageTargetPath testdrive:\deploytome `
+        -PostInstallScript { }
+
+        It 'configures the deployment context with empty settings' {
+            Assert-MockCalled ExecuteInstallation -ParameterFilter { $Settings | should not be $null}
+            Assert-MockCalled ExecuteInstallation -ParameterFilter { $Settings.Count | should be 0}
+        }
 }
