@@ -42,7 +42,6 @@ Describe 'Invoke-Powerdeploy, with a package archive' {
 
         It 'deploys the package and module to the deployment staging directory on the target' {
             Assert-MockCalled DeployFilesToTarget -ParameterFilter {
-                $DeploymentTempRoot -eq '\\SERVER1\target-share\0xtest' -and `
                 $ScriptRoot -eq "$here\.." -and `
                 $PackagePath -eq 'testdrive:\somepackage_1.2.3.zip'
             }
@@ -57,7 +56,6 @@ Describe 'Invoke-Powerdeploy, with a package archive' {
             Assert-MockCalled Install-DeploymentPackage -ParameterFilter {
                 $PackageArchive -eq 'c:\target-local\0xtest\package\somepackage_1.2.3.zip' -and `
                 $Environment -eq 'production' -and `
-                $DeploymentTempRoot -eq 'c:\target-local\0xtest' -and `
                 $PackageTargetPath -eq 'c:\mypackages\gibber'
             }
         }

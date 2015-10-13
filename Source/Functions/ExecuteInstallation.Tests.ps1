@@ -19,7 +19,6 @@ Describe 'ExecuteInstallation' {
         -PackageVersion '9.3.1' `
         -EnvironmentName 'prod-like' `
         -DeployedFolderPath 'testdrive:\package-target' `
-        -DeploymentSourcePath 'testdrive:\pdtemp' `
         -Settings @{ 'somesetting' = 'somevalue' }
 
     It 'configures the deployment context' {
@@ -54,7 +53,6 @@ Describe 'ExecuteInstallation, with extensions' {
         -PackageVersion '9.3.1' `
         -EnvironmentName 'prod-like' `
         -DeployedFolderPath 'testdrive:\package-target' `
-        -DeploymentSourcePath 'testdrive:\pdtemp' `
         -Settings @{ 'somesetting' = 'somevalue' }
 
     It 'initializes the extensions' {
@@ -89,7 +87,6 @@ Describe 'ExecuteInstallation, with an extension that fails to initialize' {
             -PackageVersion '9.3.1' `
             -EnvironmentName 'prod-like' `
             -DeployedFolderPath 'testdrive:\package-target' `
-            -DeploymentSourcePath 'testdrive:\pdtemp' `
             -Settings @{ 'somesetting' = 'somevalue' }        
     }
 
@@ -123,7 +120,6 @@ Register-DeploymentScript -Post -Phase Install -Script { $global:pester_pd_test_
         -PackageVersion '9.3.1' `
         -EnvironmentName 'prod-like' `
         -DeployedFolderPath 'testdrive:\package-target' `
-        -DeploymentSourcePath 'testdrive:\pdtemp' `
         -Settings @{ 'somesetting' = 'somevalue' }
 
     It 'executes the package initialization script' {

@@ -52,7 +52,6 @@ function Invoke-Powerdeploy {
 	$installParameters = @{
 		PackageArchive = "$localPackageTempDir\package\$packageFileName"
 		Environment = $Environment
-		DeploymentTempRoot =  $localPackageTempDir
 		PostInstallScript = $PostInstallScript
 		PackageTargetPath = $RemotePackageTargetPath
 		Variable = $Variable

@@ -30,7 +30,6 @@ Describe 'Install-DeploymentPackage, given a test package "TestPackage1"' {
         -PackageArchive $package.FullName `
         -Environment 'acceptance' `
         -Variable @{ 'url' = 'http://suspendedgravity.com'; 'connection' = 'mssql://mydatabase' } `
-        -DeploymentTempRoot $tempFolder `
         -PackageTargetPath $extractedFolder 
 
     # Debugging

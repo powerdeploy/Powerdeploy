@@ -4,8 +4,6 @@ function Install-DeploymentPackage {
 	param (
 		[string][parameter(Position = 0, Mandatory = $true)]$PackageArchive,
 		[string][parameter(Position = 1, Mandatory = $true)]$Environment,
-		[parameter(Mandatory = $true)]
-		[string]$DeploymentTempRoot,
 		[string]$Role,
 		[string]$PackageTargetPath,
 		[Hashtable][Alias("Settings")]$Variable,
@@ -49,7 +47,6 @@ function Install-DeploymentPackage {
 		-PackageVersion $packageVersion `
 		-EnvironmentName $Environment `
 		-DeployedFolderPath $extractionPath `
-		-DeploymentSourcePath $DeploymentTempRoot `
 		-Settings $Variable
 	
 	Write-Verbose 'Package installation completed without errors.'
@@ -63,4 +60,3 @@ function Install-DeploymentPackage {
     }
     & $PostInstallScript
 }
-
