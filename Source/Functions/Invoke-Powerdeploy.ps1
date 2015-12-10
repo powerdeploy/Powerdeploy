@@ -9,7 +9,7 @@ function Invoke-Powerdeploy {
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$RemotePackageTargetPath,
 		[Hashtable]$Variable,
-		[scriptblock]$PostInstallScript = { }	
+		[scriptblock]$PostInstallScript = { }
 	)
 
 	Write-Verbose ('='*80)
@@ -24,7 +24,7 @@ function Invoke-Powerdeploy {
 	}
 
 	Write-Verbose "Beginning deployment of package '$(Split-Path $PackageArchive -Leaf)' for environment '$Environment' to $ComputerName..."
-	
+
 	$remoteSession = CreateRemoteSession -ComputerName $ComputerName -Credential $Credential
 	SetCurrentPowerDeployCommandSession $remoteSession
 
@@ -34,7 +34,7 @@ function Invoke-Powerdeploy {
 
 	$localPackageTempDir = [System.IO.Path]::Combine($localTempRoot, $deploymentId)
 	$remotePackageTempDir = Join-Path $remoteTempRoot $deploymentId
-		
+
 	# Explicitly set the execution policy on the target so we don't need to depend
 	# on it being set for us.
 	ExecuteCommandInSession { Set-ExecutionPolicy RemoteSigned -Scope Process }
@@ -73,9 +73,9 @@ function Invoke-Powerdeploy {
 	)
 
 	Write-Verbose ('-'*80)
-	Write-Verbose "  Beginning remote execution on $ComputerName..." 
+	Write-Verbose "Beginning remote execution on $ComputerName..." 
 	Write-Verbose ('-'*80)
-	
+
 	Write-Verbose "Executing installation on target..."
 
 	$exception = $null
@@ -98,7 +98,7 @@ function Invoke-Powerdeploy {
 			$exception.SerializedRemoteInvocationInfo | ConvertTo-Json | Write-Verbose
 		}
 	}
-	Write-Verbose ('-'*80) 
+	Write-Verbose ('-'*80)
 
 	if ($remoteSession -ne $null) {
 		Write-Verbose "Closing remote session..."
