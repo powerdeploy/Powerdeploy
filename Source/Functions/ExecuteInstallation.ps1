@@ -1,9 +1,9 @@
 function ExecuteInstallation (
-    $PackageName, 
-    $PackageVersion, 
-    $EnvironmentName, 
+    $PackageName,
+    $PackageVersion,
+    $EnvironmentName,
     $DeployedFolderPath,
-    [Hashtable] $Settings) { 
+    [Hashtable] $Settings) {
 
     Import-Module "$PSScriptRoot\..\Helpers\Installer.psm1" -Verbose:$false
 
@@ -25,11 +25,11 @@ function ExecuteInstallation (
     }
 
     Set-DeploymentContext @context
-    
-    GetInstallationExtensions | ForEach-Object { 
+
+    GetInstallationExtensions | ForEach-Object {
         $extension = $_
         $extensionName = Split-Path (Split-Path $extension -Parent) -Leaf
-        Write-Verbose "Initializing extension $extensionName..."   
+        Write-Verbose "Initializing extension $extensionName..."
         Invoke-Expression $extension
     }
 
@@ -39,11 +39,32 @@ function ExecuteInstallation (
         & $initializationScriptPath
     }
 
+    Write-Verbose "Executing pre-prepare scripts..."
+    Get-RegisteredDeploymentScript -Pre -Phase Prepare | Invoke-RegisteredDeploymentScript
+
+    Write-Verbose "Executing prepare scripts..."
+    Get-RegisteredDeploymentScript -During -Phase Prepare | Invoke-RegisteredDeploymentScript
+
+    Write-Verbose "Executing post-prepare scripts..."
+    Get-RegisteredDeploymentScript -Post -Phase Prepare | Invoke-RegisteredDeploymentScript
+
     Write-Verbose "Executing pre-install scripts..."
     Get-RegisteredDeploymentScript -Pre -Phase Install | Invoke-RegisteredDeploymentScript
 
+    Write-Verbose "Executing install scripts..."
+    Get-RegisteredDeploymentScript -During -Phase Install | Invoke-RegisteredDeploymentScript
+
     Write-Verbose "Executing post-install scripts..."
     Get-RegisteredDeploymentScript -Post -Phase Install | Invoke-RegisteredDeploymentScript
+
+    Write-Verbose "Executing pre-configure scripts..."
+    Get-RegisteredDeploymentScript -Pre -Phase Configure | Invoke-RegisteredDeploymentScript
+
+    Write-Verbose "Executing configure scripts..."
+    Get-RegisteredDeploymentScript -During -Phase Configure | Invoke-RegisteredDeploymentScript
+
+    Write-Verbose "Executing post-configure scripts..."
+    Get-RegisteredDeploymentScript -Post -Phase Configure | Invoke-RegisteredDeploymentScript
 
     Write-Verbose 'Installation finished.'
 

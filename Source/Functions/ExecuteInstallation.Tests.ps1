@@ -1,4 +1,4 @@
-$global:TestContext = @{} 
+$global:TestContext = @{}
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 #$installerModulePath = "$here\..\Helpers\Functions\DeploymentContext.ps1"
 . $here\..\MimicModule.Tests.ps1
@@ -9,7 +9,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Describe 'ExecuteInstallation' {
 
     # Mock RunConventions { $global:TestContext.conventionsHadContext = $global:TestContext.contextCalled }
-    Mock Set-DeploymentContext { $global:TestContext.contextCalled = $true } 
+    Mock Set-DeploymentContext { $global:TestContext.contextCalled = $true }
     Mock Import-Module { } #-ParameterFilter { $Name -like '*Installer.psm1' }
     Mock GetInstallationExtensionRoot { resolve-path testdrive:\ }
     #Mock Import-Module { } -ParameterFilter { $Name -like '*Installer.psm1' }
@@ -87,7 +87,7 @@ Describe 'ExecuteInstallation, with an extension that fails to initialize' {
             -PackageVersion '9.3.1' `
             -EnvironmentName 'prod-like' `
             -DeployedFolderPath 'testdrive:\package-target' `
-            -Settings @{ 'somesetting' = 'somevalue' }        
+            -Settings @{ 'somesetting' = 'somevalue' }
     }
 
     It 'fails the installation' {
@@ -95,10 +95,52 @@ Describe 'ExecuteInstallation, with an extension that fails to initialize' {
     }
 }
 
+Describe 'ExecuteInstallation, with registered scripts for every phase' {
+    Setup -Dir extensions
+
+    $resultFile = 'testdrive:\result.txt'
+
+    Mock Import-Module { } #-ParameterFilter { $Name -like '*Installer.psm1' }
+    Mock GetInstallationExtensionRoot { resolve-path testdrive:\extensions }
+    Mock Remove-Module { }
+
+    # We'll initialize them in reverse to ensure that order of initialization
+    # doesn't determine order of execution.
+    Register-DeploymentScript -Post -Phase Configure -Script { 'post-configure' >> $resultFile }
+    Register-DeploymentScript       -Phase Configure -Script { 'configure' >> $resultFile }
+    Register-DeploymentScript -Pre  -Phase Configure -Script { 'pre-configure' >> $resultFile }
+    Register-DeploymentScript -Post -Phase Install   -Script { 'post-install' >> $resultFile }
+    Register-DeploymentScript       -Phase Install   -Script { 'install' >> $resultFile }
+    Register-DeploymentScript -Pre  -Phase Install   -Script { 'pre-install' >> $resultFile }
+    Register-DeploymentScript -Post -Phase Prepare   -Script { 'post-prepare' >> $resultFile }
+    Register-DeploymentScript       -Phase Prepare   -Script { 'prepare' >> $resultFile }
+    Register-DeploymentScript -Pre  -Phase Prepare   -Script { 'pre-prepare' >> $resultFile }
+
+    ExecuteInstallation `
+        -PackageName 'fuzzy-bunny' `
+        -PackageVersion '9.3.1' `
+        -EnvironmentName 'prod-like' `
+        -DeployedFolderPath 'testdrive:\package-target' `
+        -Settings @{ 'somesetting' = 'somevalue' }
+
+    It 'executes all scripts in correct order' {
+      $lines = Get-Content $resultFile
+      $lines[0] | should be 'pre-prepare'
+      $lines[1] | should be 'prepare'
+      $lines[2] | should be 'post-prepare'
+      $lines[3] | should be 'pre-install'
+      $lines[4] | should be 'install'
+      $lines[5] | should be 'post-install'
+      $lines[6] | should be 'pre-configure'
+      $lines[7] | should be 'configure'
+      $lines[8] | should be 'post-configure'
+    }
+}
+
 Describe 'ExecuteInstallation (as bdd)' {
     Mock Import-Module { } #-ParameterFilter { $Name -like '*Installer.psm1' }
     Mock Remove-Module { }
-    
+
     $global:pester_pd_test_initialization_executed = $false
     $global:pester_pd_test_initialization_context_value = $null
     $global:pester_pd_test_preinstall_executed = $false
@@ -136,5 +178,5 @@ Register-DeploymentScript -Post -Phase Install -Script { $global:pester_pd_test_
 
     It 'supplies the deployment context to the initialization script' {
         $global:pester_pd_test_initialization_context_value | should be 'fuzzy-bunny'
-    }    
+    }
 }
