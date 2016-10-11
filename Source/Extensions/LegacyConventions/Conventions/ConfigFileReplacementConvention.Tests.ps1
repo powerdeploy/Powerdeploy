@@ -21,7 +21,7 @@ Describe "ConfigFileReplacementConvention, replacing a configuration file with a
 	&$convention.onDeploy $context
 
     It "replaces the configuration file in the content folder with the one in settings" {
-        $content = [Xml](Get-Content TestDrive:\Package\content\test.config)
+        $content = [Xml](Get-Content TestDrive:\Package\content\test.config -Encoding UTF8)
         $content.configuration | should be 'new'
     }
 }

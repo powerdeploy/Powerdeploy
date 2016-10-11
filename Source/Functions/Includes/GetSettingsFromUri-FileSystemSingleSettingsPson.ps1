@@ -24,7 +24,7 @@ function GetSettingsFromUri {
 
         Write-Verbose "Settings were found at $settingsPath.  Settings are being parsed."
         try {
-            $settings = Invoke-Expression (Get-Content $settingsPath | Out-String)
+            $settings = Invoke-Expression (Get-Content $settingsPath -Encoding UTF8 | Out-String)
         }
         catch [System.Management.Automation.ParseException] {
             Write-Error "The settings file at '$uri' could not be parsed: $($_.Exception.Message)"

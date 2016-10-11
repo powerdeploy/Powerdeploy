@@ -33,14 +33,14 @@ task PackageChocolatey -depends Zip {
     $nuspec = "$packageFolder\temp\Chocolatey\powerdeploy.nuspec"
 
     # Update the spec with our version.
-    $xml = [xml](Get-Content $nuspec -Raw)
+    $xml = [xml](Get-Content $nuspec -Raw -Encoding UTF8)
     $xml.package.metadata.version = "$strippedVersion"
     $xml.Save($nuspec)
 
     # Update the installer to pull the binary from the right release in GitHub.
     $contentFile = "$packageFolder\temp\Chocolatey\tools\chocolateyInstall.ps1"
     cat $contentFile | write-host
-    (Get-Content "$contentFile") `
+    (Get-Content "$contentFile" -Encoding UTF8) `
       | % {$_ -replace "::version::", "$version" } `
       | % {$_ -replace "::download_zip_name::", $versionedZipName} `
       | Set-Content "$contentFile"
@@ -87,7 +87,7 @@ task Version {
     if ($changeset -eq $null -or $changeset -eq '') {
         throw 'No changeset.  Files have been modified since commit.'
     }
-    (Get-Content "$sourceFolder\PowerDeploy.psm1") `
+    (Get-Content "$sourceFolder\PowerDeploy.psm1" -Encoding UTF8) `
         | % {$_ -replace "\`$version\`$", "$version" } `
         | % {$_ -replace "\`$sha\`$", "$changeset" } `
         | Set-Content "$sourceFolder\PowerDeploy.psm1"
@@ -96,7 +96,7 @@ task Version {
 task Unversion {
     #$v = git describe --abbrev=0 --tags
     #$changeset=(git log -1 $($v + '..') --pretty=format:%H)
-    (Get-Content "$sourceFolder\PowerDeploy.psm1") `
+    (Get-Content "$sourceFolder\PowerDeploy.psm1" -Encoding UTF8) `
       | % {$_ -replace "$version", "`$version`$" } `
       | % {$_ -replace "$changeset", "`$sha`$" } `
       | Set-Content "$sourceFolder\PowerDeploy.psm1"

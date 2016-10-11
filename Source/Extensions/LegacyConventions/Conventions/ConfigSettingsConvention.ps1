@@ -22,7 +22,7 @@
 				$updated = $false
 
 				try {
-					$content = [xml](Get-Content $configPath)
+					$content = [xml](Get-Content $configPath -Encoding UTF8)
 				}
 				catch [System.Management.Automation.PSInvalidCastException] {
 					throw new-object System.Exception("The configuration file '$configPath' contains invalid xml.", $_.Exception)

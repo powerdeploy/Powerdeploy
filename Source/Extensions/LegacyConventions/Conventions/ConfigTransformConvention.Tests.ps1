@@ -36,7 +36,7 @@ Describe "ConfigTransformConvention" {
     	&$convention.onDeploy $context
 
     	It "transforms the config" {
-    		$result = [xml](Get-Content TestDrive:\Package\content\test.exe.config)
+    		$result = [xml](Get-Content TestDrive:\Package\content\test.exe.config -Encoding UTF8)
     		Write-Host "assert $namen"
     		($result.configuration['system.web'].compilation.HasAttribute('debug')) | should be $false
     	}
@@ -62,7 +62,7 @@ Describe "ConfigTransformConvention" {
         &$convention.onDeploy $context
 
         It "transforms the config" {
-            $result = [xml](Get-Content TestDrive:\Package\content\web.config)
+            $result = [xml](Get-Content TestDrive:\Package\content\web.config -Encoding UTF8)
             
             ($result.configuration['system.web'].compilation.HasAttribute('debug')) | should be $false
         }

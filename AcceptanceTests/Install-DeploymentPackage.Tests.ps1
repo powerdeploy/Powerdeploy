@@ -1,4 +1,4 @@
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $modulePath = Resolve-Path $here\..\_build\Powerdeploy.psd1
 
 . $here\..\Source\Functions\New-DeploymentPackage.ps1
@@ -29,11 +29,15 @@ Describe 'Install-DeploymentPackage, given a test package "TestPackage1"' {
     Install-DeploymentPackage `
         -PackageArchive $package.FullName `
         -Environment 'acceptance' `
-        -Variable @{ 'url' = 'http://suspendedgravity.com'; 'connection' = 'mssql://mydatabase' } `
+        -Variable @{ 
+            'url' = 'http://suspendedgravity.com'; 
+            'connection' = 'mssql://mydatabase';
+            'UTF8Setting' = 'テスト'
+            } `
         -PackageTargetPath $extractedFolder 
 
     # Debugging
-    Get-Content $packageLog | Write-Host
+    Get-Content $packageLog -Encoding UTF8 | Write-Host
 
     # It 'executes pre-install scripts' {
 
@@ -52,6 +56,7 @@ Describe 'Install-DeploymentPackage, given a test package "TestPackage1"' {
     It 'provides deployment variables through Get-DeploymentVariable' {
         $packageLog | should contain 'init: Get-DeploymentVariable url: http://suspendedgravity.com'
         $packageLog | should contain 'init: Get-DeploymentVariable connection: mssql://mydatabase'
+        $packageLog | should contain 'init: Get-DeploymentVariable UTF8Setting: テスト'
     }
     # It 'executes install script' {
 

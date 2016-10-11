@@ -43,19 +43,19 @@ Describe 'ConfigSettingsConvention' {
   	&$convention.onDeploy $context
 
   	It "replaces app setting with value from matching environment settings" {
-  		$result = [xml](Get-Content TestDrive:\Package\test.config)
+  		$result = [xml](Get-Content TestDrive:\Package\test.config -Encoding UTF8)
 
   		$result.configuration.appSettings.add[1].value | should be 'false'
   	}
 
   	It "replaces connectionstring with value from matching environment settings" {
-  		$result = [xml](Get-Content TestDrive:\Package\test.config)
+  		$result = [xml](Get-Content TestDrive:\Package\test.config -Encoding UTF8)
 
   		$result.configuration.connectionStrings.add[0].connectionString | should be "blue32"
   	}
 
   	It "sets value with ampersand as is without escaping" {
-  		$result = [xml](Get-Content TestDrive:\Package\test.config)
+  		$result = [xml](Get-Content TestDrive:\Package\test.config -Encoding UTF8)
 
   		$result.configuration.connectionStrings.add[1].connectionString | should be '"SomeValue"'
   	}

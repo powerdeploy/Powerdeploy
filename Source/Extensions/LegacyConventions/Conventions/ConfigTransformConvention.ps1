@@ -39,8 +39,8 @@
 					
 					[Reflection.Assembly]::LoadFile("$assemblyPath\Microsoft.Web.Publishing.Tasks.Dll") | Out-Null
 					
-					$contentXml = [xml](Get-Content $sourcePath)
-					$transform = (Get-Content $transformPath)
+					$contentXml = [xml](Get-Content $sourcePath -Encoding UTF8)
+					$transform = (Get-Content $transformPath -Encoding UTF8)
 					$transformation = New-Object Microsoft.Web.Publishing.Tasks.XmlTransformation($transform, $false, $null)
 					if ($transformation.Apply($contentXml) -eq $true) {
 						$contentXml.Save($sourcePath)
