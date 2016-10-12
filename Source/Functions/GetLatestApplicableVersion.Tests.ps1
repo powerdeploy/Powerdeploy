@@ -1,6 +1,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 . $here\$sut
+. $here\..\TestHelpers.ps1
 
 Describe 'GetLatestApplicableVersion, given a folder with version of all types' {
     function setupDirs {
@@ -55,6 +56,21 @@ Describe 'GetLatestApplicableVersion, given a folder with version of all types' 
 
             It 'falls back the highest previous version number' {
                 $version | should be $expected
+            }
+        }
+    }
+
+    $bad_examples = @(
+        "1.0-release-v1.0.0.80004-release",
+        "foo-foo-foo-111-111-foo-1.0.0"
+    )
+    $bad_examples | % {
+        $bad_example = $_
+        Context "when a bad version parameter is passed in, using example $bad_example"{
+            setupDirs
+            $result = Capture { GetLatestApplicableVersion TestDrive:\settings\app $bad_example }
+            It 'throws with a meaningful message' {
+                $result.message | should be "Invalid format for version $bad_example"
             }
         }
     }
