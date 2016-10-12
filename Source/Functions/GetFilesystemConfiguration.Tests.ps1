@@ -1,4 +1,4 @@
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 . $here\GetLatestApplicableVersion.ps1
 . "$here\$sut"
@@ -53,7 +53,7 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
         Setup -File somedirectory\app\consoleapp\23456\settings.pson "@{ consoleapp23456 = 'consoleapp23456value' }"
         Setup -File somedirectory\app\consoleapp\23456\acceptance.settings.pson "@{ consoleapp23456acceptance = 'consoleapp23456acceptancevalue' }"
         Setup -File somedirectory\app\consoleapp\23456\integration.settings.pson "@{ consoleapp23456integration = 'consoleapp23456integrationvalue' }"
-        Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue' }"
+        Setup -File somedirectory\env\acceptance.settings.pson "@{ envacceptance = 'envacceptancevalue';  envacceptanceUTF8 = 'テスト'}"
         Setup -File somedirectory\env\server01.acceptance.settings.pson "@{ envacceptanceserver01 = 'envacceptanceserver01value' }"
         Setup -File somedirectory\env\integration.settings.pson "@{ envintegration = 'envintegrationvalue' }"
         Setup -File somedirectory\env\integration_-#.settings.pson "@{ envintegrationallchars = 'envintegrationvalue' }"
@@ -74,8 +74,12 @@ Describe "GetFilesystemConfiguration, given files for applications and environme
             Test-ConfigurationVariable $settings 'envintegrationserver01allchars' 'envintegrationserver01value' @('Environment','Computer') @('integration_-#','server01') | should be $true
         }
 
+        It 'returns utf-8 environment settings' {
+            Test-ConfigurationVariable $settings 'envacceptanceUTF8' 'テスト' @('Environment') @('acceptance') | should be $true
+        }
+
         It 'returns no unexpected settings' {
-            $settings | Measure-Object | Select -Expand Count | should be 6
+            $settings | Measure-Object | Select -Expand Count | should be 7
         }
     }
 

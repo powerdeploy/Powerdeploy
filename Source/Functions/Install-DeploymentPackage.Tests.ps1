@@ -34,7 +34,7 @@ Describe 'Install-DeploymentPackage' {
     }
 
     It 'makes deployment parameters available to post install script' {
-        $params = Get-Content testdrive:\params.json -Raw | ConvertFrom-Json
+        $params = Get-Content testdrive:\params.json -Raw -Encoding UTF8 | ConvertFrom-Json
 
         $params.PackageName | should be 'somepackage'
         $params.PackageVersion | should be '1.2.3'

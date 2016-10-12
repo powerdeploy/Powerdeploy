@@ -21,7 +21,7 @@
 		$configs | ForEach-Object {
 			$configPath = $_.FullName
 			
-			$content = (Get-Content $configPath)
+			$content = (Get-Content $configPath -Encoding UTF8)
 			$newContent = $content
 			$settings.GetEnumerator() | Foreach-Object {
 				$newContent = $newContent -replace "\`${$($_.Key)}", $_.Value.Replace('$', '$$')

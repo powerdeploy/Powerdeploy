@@ -66,7 +66,7 @@ function GetFilesystemConfiguration {
     }
 
     function processSimplePson($scope, $scopeName, $path) {
-        $settings = Invoke-Expression (Get-Content $path -Raw)
+        $settings = Invoke-Expression (Get-Content $path -Raw -Encoding UTF8)
         New-DeploymentVariable $scope $scopeName $settings
     }
 
