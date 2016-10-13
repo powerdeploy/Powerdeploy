@@ -8,13 +8,5 @@ Describe 'DeployFilesToTarget' {
     }
 
     Context 'without settings' {
-        
-        Mock Copy-Item { }
-
-        DeployFilesToTarget TestDrive:\packagetemp b c
-
-        It 'succeeds' {
-
-        }
     }
 }
